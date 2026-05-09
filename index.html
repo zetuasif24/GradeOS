@@ -1,284 +1,429 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>CGPA — Asif Zetu</title>
-  <link rel="shortcut icon" href="./assets/cgpa.png" type="image/x-icon"/>
+  <title>GradeOS — CGPA Calculator</title>
+  <link rel="shortcut icon" href="./cgpa.png" type="image/x-icon"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="./style.css"/>
 </head>
 <body>
 <canvas id="starCanvas"></canvas>
 
-<div class="shell">
+<!-- ════ LAYOUT ════ -->
+<div class="layout">
 
-  <!-- TOPBAR -->
-  <header class="topbar">
-    <div class="topbar-brand">
-      <div class="brand-glyph">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+  <!-- ── SIDEBAR (desktop) ── -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-glyph">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
         </svg>
       </div>
-      <div>
-        <p class="brand-name">GradeOS</p>
-        <p class="brand-sub">CGPA · DIU · Bangladesh</p>
-      </div>
+      <div><p class="sb-name">GradeOS</p><p class="sb-sub">DIU · Bangladesh</p></div>
     </div>
-    <nav class="topbar-nav">
-      <button class="nav-tab active" data-view="calculator" onclick="switchView('calculator',this)">Calculator</button>
-      <button class="nav-tab" data-view="analytics"  onclick="switchView('analytics',this)">Analytics</button>
-      <button class="nav-tab" data-view="target"     onclick="switchView('target',this)">Target</button>
-      <button class="nav-tab" data-view="grading"    onclick="switchView('grading',this)">Grading</button>
+
+    <nav class="sb-nav">
+      <button class="snav active" data-view="dashboard"   onclick="nav(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="snav" data-view="calculator" onclick="nav(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Semesters
+      </button>
+      <button class="snav" data-view="analytics"  onclick="nav(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </button>
+      <button class="snav" data-view="target"     onclick="nav(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        Target
+      </button>
+      <button class="snav" data-view="grading"    onclick="nav(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+        Grading
+      </button>
     </nav>
-    <div class="topbar-right">
-      <button class="icon-pill" onclick="exportPDF()" title="Export PDF">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>Export</span>
+
+    <div class="sb-foot">
+      <button class="sb-btn theme-btn" onclick="toggleTheme()">
+        <svg class="ico-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun"  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <span>Theme</span>
       </button>
-      <button class="icon-pill theme-toggle" onclick="toggleTheme()">
-        <svg class="th-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg class="th-sun"  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <button class="sb-btn" onclick="window.print()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export PDF</span>
       </button>
     </div>
-  </header>
+  </aside>
 
-  <!-- ════ VIEW: CALCULATOR ════ -->
-  <div class="view active" id="view-calculator">
+  <!-- ── MAIN ── -->
+  <div class="main-wrap">
 
-    <!-- Hero Stats -->
-    <div class="hero-stats">
-      <div class="hero-card primary" id="heroMain">
-        <div class="hero-glow"></div>
-        <p class="hero-label">Cumulative CGPA</p>
-        <p class="hero-val" id="cgpaDisplay">0.00</p>
-        <div class="hero-bar-wrap">
-          <div class="hero-bar-track">
-            <div class="hero-bar-fill" id="cgpaBarFill"></div>
+    <!-- Mobile topbar -->
+    <header class="mob-topbar">
+      <div class="sb-brand">
+        <div class="sb-glyph sm"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <p class="sb-name">GradeOS</p>
+      </div>
+      <button class="sb-btn theme-btn" onclick="toggleTheme()" style="padding:7px 10px">
+        <svg class="ico-moon2" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="ico-sun2"  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </header>
+
+
+    <div class="content">
+
+      <!-- ════ DASHBOARD ════ -->
+      <section class="view active" id="view-dashboard">
+        <div class="vhead"><h2 class="vtitle">Dashboard</h2><p class="vsub">Your academic performance at a glance</p></div>
+
+        <!-- Top 6 stat cards -->
+        <div class="stats-grid">
+          <div class="scard primary">
+            <div class="scard-glow"></div>
+            <p class="scard-label">Cumulative GPA</p>
+            <p class="scard-val" id="d_cgpa">0.00</p>
+            <div class="scard-bar"><div class="scard-bar-fill" id="d_cgpaBar"></div></div>
+            <span class="chip chip-none" id="d_chip">No Data</span>
           </div>
-          <span class="hero-bar-max">/ 4.00</span>
-        </div>
-        <span class="status-chip" id="cgpaChip">No Data</span>
-      </div>
 
-      <div class="hero-card">
-        <p class="hero-label">This Semester</p>
-        <p class="hero-val cyan" id="semDisplay">0.00</p>
-        <span class="status-chip" id="semChip">No Data</span>
-        <p class="hero-detail" id="semDetail">0 courses · 0 credits</p>
-      </div>
-
-      <div class="hero-card">
-        <p class="hero-label">Total Credits</p>
-        <p class="hero-val" id="totalCrDisplay">0</p>
-        <p class="hero-detail">across all semesters</p>
-      </div>
-
-      <div class="hero-card">
-        <p class="hero-label">Grade Points</p>
-        <p class="hero-val" id="totalPtsDisplay">0.00</p>
-        <p class="hero-detail">weighted total</p>
-      </div>
-    </div>
-
-    <!-- Semester Control -->
-    <div class="sem-control">
-      <div class="sem-tabs-wrap" id="semTabsWrap"></div>
-      <div class="sem-ctrl-actions">
-        <button class="ctrl-btn" onclick="addSemester()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>Add Semester</span>
-        </button>
-        <button class="ctrl-btn danger" onclick="openClearModal()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
-          <span>Clear All</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Course Panel -->
-    <div class="glass-panel course-panel">
-      <div class="cp-head">
-        <div class="cp-head-left">
-          <span class="cp-title" id="semLabel">Semester 1</span>
-          <div class="sem-cg-pill">
-            <span class="scg-label">SEM CG</span>
-            <span class="scg-val" id="semCgPill">0.00</span>
+          <div class="scard">
+            <p class="scard-label">Total Credits</p>
+            <p class="scard-val" id="d_totalCr">0</p>
+            <p class="scard-sub">across all semesters</p>
+          </div>
+          <div class="scard">
+            <p class="scard-label">Total Courses</p>
+            <p class="scard-val" id="d_totalCourses">0</p>
+            <p class="scard-sub">all semesters</p>
+          </div>
+          <div class="scard">
+            <p class="scard-label">Semesters</p>
+            <p class="scard-val" id="d_semCount">0</p>
+            <p class="scard-sub">logged</p>
+          </div>
+          <div class="scard hide-mobile">
+            <p class="scard-label">Avg Credits / Sem</p>
+            <p class="scard-val" id="d_avgCr">0.0</p>
+            <p class="scard-sub">per semester</p>
           </div>
         </div>
-        <button class="add-btn" onclick="addCourse()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Course
-        </button>
-      </div>
 
-      <!-- Desktop Table -->
-      <div class="tbl-outer" id="tblOuter">
-        <table class="ctbl">
-          <thead>
-            <tr>
-              <th class="col-n">#</th>
-              <th class="col-name">Course</th>
-              <th class="col-g">Grade</th>
-              <th class="col-cr">Credits</th>
-              <th class="col-pt">Points</th>
-              <th class="col-bar">Progress</th>
-              <th class="col-x"></th>
-            </tr>
-          </thead>
-          <tbody id="ctblBody"></tbody>
-        </table>
-      </div>
+        <!-- Semester Performance -->
+        <p class="section-title">Semester Performance</p>
+        <div class="sem-overview" id="semOverview"></div>
 
-      <!-- Mobile Cards -->
-      <div class="mob-stack" id="mobStack"></div>
+        <!-- Best / Worst + Grade Distribution -->
+        <div class="three-col">
+          <div class="glass-panel mini-panel">
+            <p class="an-label">🏆 Best Performing Courses</p>
+            <div class="scroll-panel" id="bestCourses"></div>
+          </div>
+          <div class="glass-panel mini-panel">
+            <p class="an-label">⚠️ Needs Improvement</p>
+            <div class="scroll-panel" id="worstCourses"></div>
+          </div>
+          <div class="glass-panel mini-panel">
+            <p class="an-label">📊 Grade Distribution</p>
+            <div class="dash-grade-dist scroll-panel" id="dashGradeDist"></div>
+          </div>
+        </div>
 
-      <div class="cp-foot">
-        <span id="cpFootL">0 courses · 0 credits</span>
-        <span class="cp-foot-cg">CG: <strong id="cpFootCg">0.00</strong></span>
-      </div>
+        <!-- Recent Activity + Quick Insights -->
+        <div class="two-col">
+          <div class="glass-panel mini-panel">
+            <p class="an-label">🕐 Recent Activity</p>
+            <div id="recentActivity"></div>
+          </div>
+          <div class="glass-panel mini-panel">
+            <p class="an-label">⚡ Quick Insights</p>
+            <div id="quickInsights"></div>
+          </div>
+        </div>
+
+
+      </section>
+
+      <!-- ════ CALCULATOR ════ -->
+      <section class="view" id="view-calculator">
+        <div class="vhead"><h2 class="vtitle">Semesters</h2><p class="vsub">Manage your courses and calculate GPA per semester</p></div>
+
+        <div class="calc-stats">
+          <div class="cstat">
+            <p class="cstat-label">This Semester CG</p>
+            <p class="cstat-val blue" id="semDisplay">0.00</p>
+            <span class="chip chip-none" id="semChip">No Data</span>
+            <p class="cstat-sub" id="semDetail">0 courses · 0 credits</p>
+          </div>
+          <div class="cstat">
+            <p class="cstat-label">Total Credits</p>
+            <p class="cstat-val" id="totalCrDisplay">0</p>
+            <p class="cstat-sub">all semesters</p>
+          </div>
+          <div class="cstat">
+            <p class="cstat-label">Semesters</p>
+            <p class="cstat-val" id="semCountDisplay">0</p>
+            <p class="cstat-sub">logged so far</p>
+          </div>
+        </div>
+
+        <!-- Semester bar -->
+        <div class="sem-bar">
+          <div class="sem-tabs-scroll"><div class="sem-tabs" id="semTabs"></div></div>
+          <div class="sem-bar-actions">
+            <button class="sem-act-btn add-sem-btn" onclick="openAddSemModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Add</span>
+            </button>
+            <button class="sem-act-btn clear-btn" onclick="openClearModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Course panel -->
+        <div class="glass-panel">
+          <div class="cp-head">
+            <div class="cp-head-left">
+              <span class="cp-title" id="semLabel">—</span>
+              <div class="sem-cg-pill">
+                <span class="scg-lbl">SEM CG</span>
+                <span class="scg-val" id="semCgPill">0.00</span>
+              </div>
+            </div>
+            <button class="add-course-btn" onclick="addCourse()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Course
+            </button>
+          </div>
+
+          <div class="tbl-scroll">
+            <table class="ctbl">
+              <thead>
+                <tr>
+                  <th class="th-n">#</th>
+                  <th class="th-name">Course</th>
+                  <th class="th-g">Grade</th>
+                  <th class="th-cr">Credits</th>
+                  <th class="th-gp">Grade Point</th>
+                  <th class="th-bar">Level</th>
+                  <th class="th-x"></th>
+                </tr>
+              </thead>
+              <tbody id="ctblBody"></tbody>
+            </table>
+          </div>
+
+          <div class="mob-courses" id="mobCourses"></div>
+
+          <div class="cp-foot">
+            <span id="cpFootL">0 courses · 0 credits</span>
+            <span>Sem CG: <strong class="blue-txt" id="cpFootCg">0.00</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ ANALYTICS ════ -->
+      <section class="view" id="view-analytics">
+        <div class="vhead"><h2 class="vtitle">Analytics</h2><p class="vsub">Deep dive into your academic performance</p></div>
+        <div class="analytics-grid">
+
+          <!-- Cumulative GPA Progress (wide) -->
+          <div class="glass-panel an-panel an-wide">
+            <p class="an-label">Cumulative GPA Progress</p>
+            <div class="cumulative-wrap" id="cumulWrap"></div>
+          </div>
+
+          <!-- Best & Lowest Semester highlight cards -->
+          <div class="glass-panel an-panel an-highlight-card" id="bestSemCard">
+            <p class="an-label">🏆 Best Semester</p>
+            <p class="an-hl-name" id="bestSemName">—</p>
+            <p class="an-hl-val" id="bestSemCg">—</p>
+            <span class="chip chip-none" id="bestSemChip"></span>
+          </div>
+          <div class="glass-panel an-panel an-highlight-card" id="lowSemCard">
+            <p class="an-label">📉 Lowest Semester</p>
+            <p class="an-hl-name" id="lowSemName">—</p>
+            <p class="an-hl-val" id="lowSemCg">—</p>
+            <span class="chip chip-none" id="lowSemChip"></span>
+          </div>
+
+          <!-- GPA Trend (wide) -->
+          <div class="glass-panel an-panel an-wide">
+            <p class="an-label">GPA Trend</p>
+            <div class="trend-wrap"><svg id="trendSvg" class="trend-svg" viewBox="0 0 700 160" preserveAspectRatio="none"></svg></div>
+          </div>
+
+          <!-- Credit Distribution + Semester Comparison side by side -->
+          <div class="glass-panel an-panel an-pair-left">
+            <p class="an-label">Credit Distribution</p>
+            <div class="donut-outer">
+              <div class="donut-canvas-wrap">
+                <canvas id="donutCanvas" width="180" height="180"></canvas>
+                <div class="donut-center"><span class="donut-num" id="donutNum">0</span><span class="donut-sub">credits</span></div>
+                <div class="donut-tip" id="donutTip"></div>
+              </div>
+              <div class="donut-legend" id="donutLegend"></div>
+            </div>
+          </div>
+          <div class="glass-panel an-panel an-pair-right">
+            <p class="an-label">Semester Comparison</p>
+            <div class="sem-compare-wrap" id="semCompare"></div>
+          </div>
+
+          <!-- Grade Breakdown full width -->
+          <div class="glass-panel an-panel an-wide">
+            <p class="an-label">Grade Breakdown</p>
+            <div class="grade-dist" id="gradeDist"></div>
+          </div>
+
+          <!-- GPA Classification -->
+          <div class="glass-panel an-panel">
+            <p class="an-label">GPA Classification</p>
+            <div class="gpa-class-wrap" id="gpaClass"></div>
+          </div>
+
+          <!-- Performance Insights -->
+          <div class="glass-panel an-panel">
+            <p class="an-label">Performance Insights</p>
+            <div class="perf-insights" id="perfInsights"></div>
+          </div>
+
+          <!-- Performance Heatmap (wide) -->
+          <div class="glass-panel an-panel an-wide">
+            <p class="an-label">Performance Heatmap — Grade per course across semesters</p>
+            <div class="heatmap-wrap" id="heatmap"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ════ TARGET ════ -->
+      <section class="view" id="view-target">
+        <div class="vhead"><h2 class="vtitle">Target Calculator</h2><p class="vsub">Find out what you need to reach your goal</p></div>
+        <div class="target-layout">
+          <div class="glass-panel target-panel">
+            <div class="ti-group">
+              <label class="ti-label">Target CGPA</label>
+              <input class="ti-input" type="number" id="targetCgpa" min="0" max="4" step="0.01" placeholder="e.g. 3.75" oninput="calcTarget()"/>
+            </div>
+            <!-- Graduation Mode toggle -->
+            <div class="ti-toggle-row">
+              <label class="ti-toggle-label">
+                <input type="checkbox" id="gradToggle" onchange="toggleGradMode()"/>
+                <span class="ti-toggle-track"><span class="ti-toggle-thumb"></span></span>
+                <span class="ti-toggle-text">Total Graduation Mode</span>
+              </label>
+              <span class="ti-toggle-sub" id="gradToggleSub">Uses remaining degree credits &amp; future semesters</span>
+            </div>
+            <div class="ti-group" id="tiCreditsGroup">
+              <label class="ti-label" id="tiCreditsLabel">Planned Credits (Next Semester)</label>
+              <input class="ti-input" type="number" id="targetCredits" min="1" max="500" step="0.5" placeholder="e.g. 15" oninput="calcTarget()"/>
+            </div>
+            <div class="ti-group grad-only" id="tiSemsGroup" style="display:none">
+              <label class="ti-label">Remaining Semesters</label>
+              <input class="ti-input" type="number" id="targetRemSems" min="1" max="20" step="1" placeholder="e.g. 4" oninput="calcTarget()"/>
+            </div>
+            <div class="ti-divider"></div>
+            <div class="ti-result">
+              <p class="tr-label" id="trLabel">Required GPA This Semester</p>
+              <p class="tr-val" id="targetGpaNeeded">—</p>
+              <p class="tr-note" id="targetNote">Enter your target CGPA and planned credits above.</p>
+            </div>
+          </div>
+          <div class="glass-panel target-vis-panel">
+            <p class="an-label">Progress Comparison</p>
+            <div class="tbar-list">
+              <div class="tbar-row"><span class="tbar-lbl">Current</span><div class="tbar-track"><div class="tbar-fill tbar-current" id="tbarCurrent"></div></div><span class="tbar-num" id="tbarCurrentNum">0.00</span></div>
+              <div class="tbar-row"><span class="tbar-lbl">Target</span><div class="tbar-track"><div class="tbar-fill tbar-target" id="tbarTarget"></div></div><span class="tbar-num" id="tbarTargetNum">—</span></div>
+              <div class="tbar-row"><span class="tbar-lbl">Needed</span><div class="tbar-track"><div class="tbar-fill tbar-needed" id="tbarNeeded"></div></div><span class="tbar-num" id="tbarNeededNum">—</span></div>
+            </div>
+            <div class="scenarios" id="scenarios"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════ GRADING ════ -->
+      <section class="view" id="view-grading">
+        <div class="vhead"><h2 class="vtitle">UGC Grading System</h2><p class="vsub">Official Bangladesh UGC uniform grading scale</p></div>
+        <div class="grading-cards">
+          <div class="gcard g-ap"><div class="gc-bar"></div><span class="gc-grade">A+</span><span class="gc-pts">4.00</span><span class="gc-range">80–100%</span><span class="gc-rem">Outstanding</span></div>
+          <div class="gcard g-a"> <div class="gc-bar"></div><span class="gc-grade">A</span> <span class="gc-pts">3.75</span><span class="gc-range">75–79%</span> <span class="gc-rem">Excellent</span></div>
+          <div class="gcard g-am"><div class="gc-bar"></div><span class="gc-grade">A−</span><span class="gc-pts">3.50</span><span class="gc-range">70–74%</span><span class="gc-rem">Very Good</span></div>
+          <div class="gcard g-bp"><div class="gc-bar"></div><span class="gc-grade">B+</span><span class="gc-pts">3.25</span><span class="gc-range">65–69%</span><span class="gc-rem">Good</span></div>
+          <div class="gcard g-b"> <div class="gc-bar"></div><span class="gc-grade">B</span> <span class="gc-pts">3.00</span><span class="gc-range">60–64%</span><span class="gc-rem">Satisfactory</span></div>
+          <div class="gcard g-bm"><div class="gc-bar"></div><span class="gc-grade">B−</span><span class="gc-pts">2.75</span><span class="gc-range">55–59%</span><span class="gc-rem">Above Average</span></div>
+          <div class="gcard g-cp"><div class="gc-bar"></div><span class="gc-grade">C+</span><span class="gc-pts">2.50</span><span class="gc-range">50–54%</span><span class="gc-rem">Average</span></div>
+          <div class="gcard g-c"> <div class="gc-bar"></div><span class="gc-grade">C</span> <span class="gc-pts">2.25</span><span class="gc-range">45–49%</span><span class="gc-rem">Below Average</span></div>
+          <div class="gcard g-d"> <div class="gc-bar"></div><span class="gc-grade">D</span> <span class="gc-pts">2.00</span><span class="gc-range">40–44%</span><span class="gc-rem">Pass</span></div>
+          <div class="gcard g-f"> <div class="gc-bar"></div><span class="gc-grade">F</span> <span class="gc-pts">0.00</span><span class="gc-range">00–39%</span><span class="gc-rem">Fail</span></div>
+        </div>
+      </section>
+
+      <footer class="footer"><span>GradeOS · <strong>Asif Zetu</strong> · DIU Software Engineering</span><span>© 2026</span></footer>
     </div>
   </div>
-
-  <!-- ════ VIEW: ANALYTICS ════ -->
-  <div class="view" id="view-analytics">
-    <div class="view-title-row">
-      <h2 class="view-title">Semester Analytics</h2>
-      <p class="view-sub">Visual breakdown of your academic performance</p>
-    </div>
-
-    <div class="analytics-grid">
-      <!-- Bar chart -->
-      <div class="glass-panel an-panel an-wide">
-        <p class="an-label">CG Per Semester</p>
-        <div class="bar-chart" id="barChart"></div>
-        <div class="bar-chart-labels" id="barLabels"></div>
-      </div>
-
-      <!-- Donut -->
-      <div class="glass-panel an-panel">
-        <p class="an-label">Credit Distribution</p>
-        <div class="donut-wrap">
-          <div class="donut" id="donutEl"></div>
-          <div class="donut-center">
-            <span class="donut-num" id="donutNum">0</span>
-            <span class="donut-sub">credits</span>
-          </div>
-        </div>
-        <div class="donut-legend" id="donutLegend"></div>
-      </div>
-
-      <!-- Trend line -->
-      <div class="glass-panel an-panel an-wide">
-        <p class="an-label">CG Trend</p>
-        <div class="trend-wrap">
-          <svg class="trend-svg" id="trendSvg" viewBox="0 0 600 140" preserveAspectRatio="none"></svg>
-        </div>
-      </div>
-
-      <!-- Grade distribution -->
-      <div class="glass-panel an-panel">
-        <p class="an-label">Grade Distribution</p>
-        <div class="grade-dist" id="gradeDist"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ VIEW: TARGET ════ -->
-  <div class="view" id="view-target">
-    <div class="view-title-row">
-      <h2 class="view-title">Target Calculator</h2>
-      <p class="view-sub">Find out what you need to reach your goal</p>
-    </div>
-
-    <div class="target-layout">
-      <div class="glass-panel target-input-panel">
-        <div class="ti-group">
-          <label class="ti-label">Target CGPA</label>
-          <input class="ti-input" type="number" id="targetCgpa" min="0" max="4" step="0.01"
-            placeholder="e.g. 3.75" oninput="calcTarget()"/>
-        </div>
-        <div class="ti-group">
-          <label class="ti-label">Planned Credits This Semester</label>
-          <input class="ti-input" type="number" id="targetCredits" min="1" max="24" step="0.5"
-            placeholder="e.g. 15" oninput="calcTarget()"/>
-        </div>
-        <div class="ti-divider"></div>
-        <div class="ti-result" id="targetResult">
-          <p class="tr-label">Required GPA This Semester</p>
-          <p class="tr-val" id="targetGpaNeeded">—</p>
-          <p class="tr-note" id="targetNote">Enter your target CGPA and planned credits above.</p>
-        </div>
-      </div>
-
-      <div class="glass-panel target-vis-panel">
-        <p class="an-label">Current vs Target</p>
-        <div class="target-bars">
-          <div class="tbar-row">
-            <span class="tbar-label">Current</span>
-            <div class="tbar-track"><div class="tbar-fill current" id="tbarCurrent"></div></div>
-            <span class="tbar-num" id="tbarCurrentNum">0.00</span>
-          </div>
-          <div class="tbar-row">
-            <span class="tbar-label">Target</span>
-            <div class="tbar-track"><div class="tbar-fill target" id="tbarTarget"></div></div>
-            <span class="tbar-num" id="tbarTargetNum">—</span>
-          </div>
-          <div class="tbar-row">
-            <span class="tbar-label">Required</span>
-            <div class="tbar-track"><div class="tbar-fill required" id="tbarRequired"></div></div>
-            <span class="tbar-num" id="tbarRequiredNum">—</span>
-          </div>
-        </div>
-        <div class="target-scenarios" id="targetScenarios"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ VIEW: GRADING ════ -->
-  <div class="view" id="view-grading">
-    <div class="view-title-row">
-      <h2 class="view-title">UGC Uniform Grading</h2>
-      <p class="view-sub">Official Bangladesh UGC grading scale</p>
-    </div>
-    <div class="grading-cards">
-      <div class="gcard g-ap"><div class="gc-top"><span class="gc-grade">A+</span><span class="gc-pts">4.00</span></div><span class="gc-range">80 – 100%</span><span class="gc-remark">Outstanding</span></div>
-      <div class="gcard g-a"> <div class="gc-top"><span class="gc-grade">A</span> <span class="gc-pts">3.75</span></div><span class="gc-range">75 – 79%</span><span class="gc-remark">Excellent</span></div>
-      <div class="gcard g-am"><div class="gc-top"><span class="gc-grade">A−</span><span class="gc-pts">3.50</span></div><span class="gc-range">70 – 74%</span><span class="gc-remark">Very Good</span></div>
-      <div class="gcard g-bp"><div class="gc-top"><span class="gc-grade">B+</span><span class="gc-pts">3.25</span></div><span class="gc-range">65 – 69%</span><span class="gc-remark">Good</span></div>
-      <div class="gcard g-b"> <div class="gc-top"><span class="gc-grade">B</span> <span class="gc-pts">3.00</span></div><span class="gc-range">60 – 64%</span><span class="gc-remark">Satisfactory</span></div>
-      <div class="gcard g-bm"><div class="gc-top"><span class="gc-grade">B−</span><span class="gc-pts">2.75</span></div><span class="gc-range">55 – 59%</span><span class="gc-remark">Above Average</span></div>
-      <div class="gcard g-cp"><div class="gc-top"><span class="gc-grade">C+</span><span class="gc-pts">2.50</span></div><span class="gc-range">50 – 54%</span><span class="gc-remark">Average</span></div>
-      <div class="gcard g-c"> <div class="gc-top"><span class="gc-grade">C</span> <span class="gc-pts">2.25</span></div><span class="gc-range">45 – 49%</span><span class="gc-remark">Below Average</span></div>
-      <div class="gcard g-d"> <div class="gc-top"><span class="gc-grade">D</span> <span class="gc-pts">2.00</span></div><span class="gc-range">40 – 44%</span><span class="gc-remark">Pass</span></div>
-      <div class="gcard g-f"> <div class="gc-top"><span class="gc-grade">F</span> <span class="gc-pts">0.00</span></div><span class="gc-range">00 – 39%</span><span class="gc-remark">Fail</span></div>
-    </div>
-  </div>
-
-  <footer class="footer">
-    <span>GradeOS · Built by <strong>Asif Zetu</strong></span>
-    <span>DIU · Software Engineering · 2026</span>
-  </footer>
 </div>
 
-<!-- Clear Modal -->
+<!-- Mobile bottom nav -->
+<nav class="mob-nav">
+  <button class="mob-btn active" data-view="dashboard"   onclick="nav(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dash</span></button>
+  <button class="mob-btn" data-view="calculator" onclick="nav(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><span>Sems</span></button>
+  <button class="mob-btn" data-view="analytics"  onclick="nav(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Stats</span></button>
+  <button class="mob-btn" data-view="target"     onclick="nav(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span>Target</span></button>
+  <button class="mob-btn" data-view="grading"    onclick="nav(this)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg><span>Grades</span></button>
+</nav>
+
+<!-- ADD SEMESTER MODAL -->
+<div class="modal-overlay" id="addSemModal" onclick="if(event.target===this)closeAddSemModal()">
+  <div class="modal-box">
+    <div class="modal-ico cyan-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <h3>New Semester</h3><p>Choose semester type and year</p>
+    <div class="sem-picker">
+      <div class="stype-row">
+        <button class="stype-btn active" data-type="Spring" onclick="pickType(this)">🌸 Spring</button>
+        <button class="stype-btn" data-type="Summer" onclick="pickType(this)">☀️ Summer</button>
+        <button class="stype-btn" data-type="Fall"   onclick="pickType(this)">🍂 Fall</button>
+      </div>
+      <input class="sem-year-inp" type="number" id="semYearInp" placeholder="Year e.g. 2025" min="2000" max="2099" oninput="updateSemPreview()"/>
+      <div class="sem-preview"><span class="sp-label">Preview:</span><span class="sp-val" id="semPreview">Spring 2025</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn cancel" onclick="closeAddSemModal()">Cancel</button>
+      <button class="mbtn ok" onclick="confirmAddSem()">Add Semester</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE SEMESTER MODAL -->
+<div class="modal-overlay" id="delSemModal" onclick="if(event.target===this)closeDelSemModal()">
+  <div class="modal-box">
+    <div class="modal-ico warn-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <h3>Delete Semester?</h3><p id="delSemMsg">All courses in this semester will be permanently removed.</p>
+    <div class="modal-actions">
+      <button class="mbtn cancel" onclick="closeDelSemModal()">Keep It</button>
+      <button class="mbtn danger" onclick="confirmDelSem()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLEAR ALL MODAL -->
 <div class="modal-overlay" id="clearModal" onclick="if(event.target===this)closeClearModal()">
   <div class="modal-box">
-    <div class="modal-icon-wrap">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-        <path d="M9 6V4h6v2"/>
-      </svg>
-    </div>
-    <h3>Clear everything?</h3>
-    <p>All semesters and courses will be permanently deleted.</p>
+    <div class="modal-ico danger-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></div>
+    <h3>Clear Everything?</h3><p>All semesters and courses will be permanently deleted. This cannot be undone.</p>
     <div class="modal-actions">
       <button class="mbtn cancel" onclick="closeClearModal()">Cancel</button>
-      <button class="mbtn confirm" onclick="clearAll()">Clear All</button>
+      <button class="mbtn danger" onclick="clearAll()">Clear All</button>
     </div>
   </div>
 </div>
