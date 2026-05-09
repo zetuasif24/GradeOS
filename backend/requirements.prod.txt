@@ -1,0 +1,7 @@
+# ── Production requirements (Railway / Render + PostgreSQL) ──
+# Extends the base requirements with the PostgreSQL driver.
+# Railway/Render will use this file: set Start Command to use this.
+-r requirements.txt
+
+# PostgreSQL driver — pre-built wheels available on Railway (Linux + Python 3.11/3.12)
+psycopg2-binary==2.9.9

@@ -1,0 +1,14 @@
+# ── Core (local dev + production) ──
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.4.0
+python-decouple==3.8
+dj-database-url==2.2.0
+gunicorn==22.0.0
+whitenoise==6.7.0
+
+# ── PostgreSQL driver ──
+# psycopg2-binary is only needed in production (Railway/Render with PostgreSQL).
+# For local dev we use SQLite (DATABASE_URL is empty in .env).
+# To install with PostgreSQL support: pip install -r requirements.prod.txt
