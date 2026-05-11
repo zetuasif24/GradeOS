@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { getSemesters, createSemester, deleteSemester as apiDeleteSem,
          createCourse, updateCourse as apiUpdateCourse, deleteCourse as apiDeleteCourse,
-         clearAll as apiClearAll } from '../api/grades'
+         clearAll as apiClearAll, getPerformance, upsertPerformance } from '../api/grades'
 import { updateProfile as apiUpdateProfile } from '../api/auth'
 import { sortSems, uid } from '../utils'
 
@@ -46,7 +46,6 @@ const useAppStore = create((set, get) => ({
   addSemester: async (name) => {
     const { sems } = get()
     const data = await createSemester(name, sems.length)
-    // The API returns the new sem without courses yet — add empty array
     const newSem = { ...data, courses: data.courses || [] }
     const sorted = sortSems([...sems, newSem])
     set({ sems: sorted, activeId: newSem.id })
@@ -65,7 +64,7 @@ const useAppStore = create((set, get) => ({
 
   switchSem: (id) => set({ activeId: id }),
 
-  // ── Add course ──
+  // ── Add course to active semester ──
   addCourse: async () => {
     const sem = get().getActive()
     if (!sem) return
@@ -75,11 +74,25 @@ const useAppStore = create((set, get) => ({
         s.id === sem.id ? { ...s, courses: [...s.courses, newCourse] } : s
       )
     }))
+    return newCourse
+  },
+
+  // ── Add course to a specific semester (used by CourseTracker) ──
+  addCourseToSem: async (semId) => {
+    const newCourse = await createCourse(semId, { name: '', grade: 'A+', credit: 3 })
+    set(state => ({
+      sems: state.sems.map(s =>
+        s.id === semId ? { ...s, courses: [...s.courses, newCourse] } : s
+      )
+    }))
+    return newCourse
   },
 
   // ── Update course (optimistic) ──
   updateCourse: async (courseId, field, value) => {
-    const sem = get().getActive()
+    const { sems } = get()
+    // Find which sem owns this course
+    const sem = sems.find(s => s.courses.some(c => c.id === courseId))
     if (!sem) return
     // Optimistic update
     set(state => ({
@@ -89,14 +102,12 @@ const useAppStore = create((set, get) => ({
           : s
       )
     }))
-    // Debounced API sync — store a pending timeout per courseId
     clearTimeout(window._courseSync?.[courseId])
     if (!window._courseSync) window._courseSync = {}
     window._courseSync[courseId] = setTimeout(async () => {
       try {
         await apiUpdateCourse(sem.id, courseId, { [field]: value })
       } catch {
-        // On failure re-load from API
         get().loadSemesters()
       }
     }, 600)
@@ -104,7 +115,8 @@ const useAppStore = create((set, get) => ({
 
   // ── Remove course ──
   removeCourse: async (courseId) => {
-    const sem = get().getActive()
+    const { sems } = get()
+    const sem = sems.find(s => s.courses.some(c => c.id === courseId))
     if (!sem) return
     set(state => ({
       sems: state.sems.map(s =>
@@ -116,10 +128,56 @@ const useAppStore = create((set, get) => ({
     await apiDeleteCourse(sem.id, courseId)
   },
 
+  // ── Clear all courses in a semester ──
+  clearSemCourses: async (semId) => {
+    const { sems } = get()
+    const sem = sems.find(s => s.id === semId)
+    if (!sem || !sem.courses.length) return
+    set(state => ({
+      sems: state.sems.map(s => s.id === semId ? { ...s, courses: [] } : s)
+    }))
+    await Promise.all(sem.courses.map(c => apiDeleteCourse(semId, c.id)))
+  },
+
   // ── Clear all ──
   clearAll: async () => {
     await apiClearAll()
     set({ sems: [], activeId: null })
+  },
+
+  // ── Course Performance ──
+  // coursePerf: { [courseId]: { quiz1, quiz2, ... } }
+  coursePerf: {},
+
+  loadPerformance: async (semId, courseId) => {
+    try {
+      const data = await getPerformance(semId, courseId)
+      set(state => ({ coursePerf: { ...state.coursePerf, [courseId]: data } }))
+      return data
+    } catch {
+      // Return empty if not found
+      const empty = { quiz1: '', quiz2: '', quiz3: '', makeup_quiz: '',
+                       midterm: '', assignment: '', presentation: '',
+                       attendance_pct: '', final_exam: '' }
+      set(state => ({ coursePerf: { ...state.coursePerf, [courseId]: empty } }))
+      return empty
+    }
+  },
+
+  savePerformance: async (semId, courseId, data) => {
+    // Optimistic update
+    set(state => ({
+      coursePerf: { ...state.coursePerf, [courseId]: { ...state.coursePerf[courseId], ...data } }
+    }))
+    clearTimeout(window._perfSync?.[courseId])
+    if (!window._perfSync) window._perfSync = {}
+    window._perfSync[courseId] = setTimeout(async () => {
+      try {
+        await upsertPerformance(semId, courseId, data)
+      } catch {
+        // silently fail — data stays in memory
+      }
+    }, 800)
   },
 
   // ── Theme (stored locally — not user data) ──

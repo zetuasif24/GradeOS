@@ -1,11 +1,24 @@
 from rest_framework import serializers
-from .models import Semester, Course
+from .models import Semester, Course, CoursePerformance
+
+
+class CoursePerformanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CoursePerformance
+        fields = (
+            'quiz1', 'quiz2', 'quiz3', 'makeup_quiz',
+            'midterm', 'assignment', 'presentation',
+            'attendance_pct', 'final_exam', 'updated_at',
+        )
+        read_only_fields = ('updated_at',)
 
 
 class CourseSerializer(serializers.ModelSerializer):
+    performance = CoursePerformanceSerializer(read_only=True)
+
     class Meta:
         model = Course
-        fields = ('id', 'name', 'grade', 'credit', 'created_at', 'updated_at')
+        fields = ('id', 'name', 'grade', 'credit', 'performance', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 

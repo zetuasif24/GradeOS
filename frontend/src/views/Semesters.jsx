@@ -64,7 +64,7 @@ export default function Semesters() {
 
   return (
     <>
-      <div className="vhead"><h2 className="vtitle">Semesters</h2><p className="vsub">Manage your courses and calculate GPA per semester</p></div>
+      <div className="vhead"><h2 className="vtitle">Semester CGPA</h2><p className="vsub">Set course grades and calculate your semester GPA · Courses added in Course Tracker appear here automatically</p></div>
 
       <div className="calc-stats">
         <div className="cstat">

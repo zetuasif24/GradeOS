@@ -39,6 +39,20 @@ export default function Modals() {
     close()
   }
 
+  // ── Delete Course ──
+  const removeCourse = useAppStore(s => s.removeCourse)
+  const confirmDelCourse = async () => {
+    await removeCourse(modal?.payload?.id)
+    close()
+  }
+
+  // ── Clear Semester Courses ──
+  const clearSemCourses = useAppStore(s => s.clearSemCourses)
+  const confirmClearSemCourses = async () => {
+    await clearSemCourses(modal?.payload?.semId)
+    close()
+  }
+
   // ── Profile modal ──
   const [profileTab, setProfileTab] = useState('info') // 'info' | 'password'
   // Info tab
@@ -154,6 +168,43 @@ export default function Modals() {
           <div className="modal-actions">
             <button className="mbtn cancel" onClick={close}>Keep It</button>
             <button className="mbtn danger" onClick={confirmDel}>Delete</button>
+          </div>
+        </div>
+      </div>
+
+      {/* DELETE COURSE */}
+      <div className={`modal-overlay ${isOpen('delCourse') ? 'open' : ''}`}
+           onClick={e => e.target === e.currentTarget && close()}>
+        <div className="modal-box">
+          <div className="modal-ico danger-ico">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </div>
+          <h3>Delete Course?</h3>
+          <p>"{modal?.payload?.name}" and all its assessment marks will be permanently removed.</p>
+          <div className="modal-actions">
+            <button className="mbtn cancel" onClick={close}>Keep It</button>
+            <button className="mbtn danger" onClick={confirmDelCourse}>Delete</button>
+          </div>
+        </div>
+      </div>
+
+      {/* CLEAR SEM COURSES */}
+      <div className={`modal-overlay ${isOpen('clearSemCourses') ? 'open' : ''}`}
+           onClick={e => e.target === e.currentTarget && close()}>
+        <div className="modal-box">
+          <div className="modal-ico danger-ico">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <h3>Delete All Courses?</h3>
+          <p>All courses in <strong>"{modal?.payload?.semName}"</strong> and their assessment marks will be permanently removed. This cannot be undone.</p>
+          <div className="modal-actions">
+            <button className="mbtn cancel" onClick={close}>Keep Them</button>
+            <button className="mbtn danger" onClick={confirmClearSemCourses}>Delete All</button>
           </div>
         </div>
       </div>

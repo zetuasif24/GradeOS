@@ -3,10 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from .models import Semester, Course
+from .models import Semester, Course, CoursePerformance
 from .serializers import (
     SemesterSerializer, SemesterWriteSerializer,
-    CourseSerializer, BulkSyncSerializer
+    CourseSerializer, CoursePerformanceSerializer, BulkSyncSerializer
 )
 
 VALID_GRADES = {'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'F'}
@@ -16,7 +16,9 @@ class SemesterViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Semester.objects.filter(user=self.request.user).prefetch_related('courses')
+        return Semester.objects.filter(user=self.request.user).prefetch_related(
+            'courses', 'courses__performance'
+        )
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
@@ -55,6 +57,26 @@ class SemesterViewSet(viewsets.ModelViewSet):
         # PUT / PATCH
         partial = (request.method == 'PATCH')
         serializer = CourseSerializer(course, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    # ── Course performance (upsert) ──
+    @action(detail=True, methods=['get', 'put', 'patch'],
+            url_path=r'courses/(?P<course_id>[^/.]+)/performance')
+    def course_performance(self, request, pk=None, course_id=None):
+        semester = get_object_or_404(Semester, pk=pk, user=request.user)
+        course = get_object_or_404(Course, pk=course_id, semester=semester)
+
+        # Get or create performance record
+        perf, _ = CoursePerformance.objects.get_or_create(course=course)
+
+        if request.method == 'GET':
+            return Response(CoursePerformanceSerializer(perf).data)
+
+        # PUT / PATCH — upsert
+        partial = (request.method == 'PATCH')
+        serializer = CoursePerformanceSerializer(perf, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)

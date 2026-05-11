@@ -25,3 +25,10 @@ export const bulkSync = (sems) =>
 
 export const clearAll = () =>
   api.delete('/semesters/clear-all/')
+
+// ── Course Performance ──
+export const getPerformance = (semId, courseId) =>
+  api.get(`/semesters/${semId}/courses/${courseId}/performance/`).then(r => r.data)
+
+export const upsertPerformance = (semId, courseId, data) =>
+  api.patch(`/semesters/${semId}/courses/${courseId}/performance/`, data).then(r => r.data)

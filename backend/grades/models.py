@@ -46,3 +46,26 @@ class Course(models.Model):
 
     def __str__(self):
         return f'{self.semester.name} — {self.name or "Unnamed"}: {self.grade}'
+
+
+class CoursePerformance(models.Model):
+    """Stores granular assessment marks for a course (one-to-one)."""
+    course = models.OneToOneField(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='performance'
+    )
+    quiz1         = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    quiz2         = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    quiz3         = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    makeup_quiz   = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    midterm       = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    assignment    = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    presentation  = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    # Attendance stored as percentage (0-100); frontend converts to /7 mark
+    attendance_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    final_exam    = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Performance: {self.course}'
