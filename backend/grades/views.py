@@ -98,10 +98,13 @@ class SemesterViewSet(viewsets.ModelViewSet):
 
         created_sems = []
         for i, sem_data in enumerate(sems_data):
+            raw_status = sem_data.get('status', 'completed')
+            sem_status = raw_status if raw_status in ('in_progress', 'completed') else 'completed'
             sem = Semester.objects.create(
                 user=request.user,
                 name=sem_data.get('name', f'Semester {i+1}'),
                 order=i,
+                status=sem_status,
             )
             for course_data in sem_data.get('courses', []):
                 grade = course_data.get('grade', 'A+')
@@ -114,6 +117,8 @@ class SemesterViewSet(viewsets.ModelViewSet):
                     credit=float(course_data.get('credit', 3)),
                 )
             created_sems.append(sem)
+
+
 
         result = SemesterSerializer(created_sems, many=True)
         return Response(result.data, status=status.HTTP_201_CREATED)

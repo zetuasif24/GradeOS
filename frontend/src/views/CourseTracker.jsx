@@ -89,6 +89,24 @@ export default function CourseTracker() {
   const selSem    = sems.find(s => s.id === selSemId) || sems[0] || null
   const selCourse = selSem?.courses.find(c => c.id === selCourseId) || null
 
+  // Auto-select new semester when sems list changes (e.g. after addSemester)
+  useEffect(() => {
+    if (!selSemId && sems.length > 0) {
+      setSelSemId(sems[sems.length - 1].id)
+      return
+    }
+    // If current sem no longer exists, pick the last one
+    if (selSemId && !sems.find(s => s.id === selSemId) && sems.length > 0) {
+      setSelSemId(sems[sems.length - 1].id)
+      return
+    }
+    // If a brand-new semester was just added (store activeId points to it), follow it
+    const storeActiveId = useAppStore.getState().activeId
+    if (storeActiveId && storeActiveId !== selSemId && sems.find(s => s.id === storeActiveId)) {
+      setSelSemId(storeActiveId)
+    }
+  }, [sems.length])
+
   useEffect(() => { setSelCourseId(null); setLocalPerf({}); setSearch('') }, [selSemId])
 
   useEffect(() => {
@@ -164,9 +182,11 @@ export default function CourseTracker() {
             {sems.length === 0 ? (
               <span className="ct-sem-empty">No semesters — add one →</span>
             ) : sems.map(s => (
-              <button key={s.id} className={`ct-sem-tab ${s.id === selSemId ? 'active' : ''}`}
+              <button key={s.id}
+                className={`ct-sem-tab ${s.id === selSemId ? 'active' : ''} ${s.status === 'in_progress' ? 'ct-sem-tab-ip' : ''}`}
                 onClick={() => setSelSemId(s.id)}>
                 <span>{s.name}</span>
+                {s.status === 'in_progress' && <span className="sem-tab-ip-dot" title="In Progress" />}
                 {sems.length > 1 && (
                   <span className="ct-sem-tab-x" onClick={e => { e.stopPropagation(); openModal('delSem', { id: s.id, name: s.name }) }}>✕</span>
                 )}
@@ -289,8 +309,9 @@ export default function CourseTracker() {
                 onChange={e => setCourseName(e.target.value)}
                 onBlur={() => { if (selCourseId && courseName !== selCourse?.name) updateCourse(selCourseId, 'name', courseName) }}
               />
-              <div className="ct-ch-meta">
+              <div className="ct-ch-meta" style={{ marginTop: '8px' }}>
                 <span className="ct-ch-sem-tag">{selSem.name}</span>
+
                 <div className="ct-ch-cr-wrap">
                   <input className="ct-fh-cr-input" type="number" min="0" max="6" step="0.5"
                     value={courseCredit} title="Edit credits"

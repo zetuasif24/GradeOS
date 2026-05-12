@@ -10,14 +10,24 @@ GRADE_CHOICES = [
 
 
 class Semester(models.Model):
+    STATUS_CHOICES = [
+        ('in_progress', 'In Progress'),
+        ('completed',   'Completed'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='semesters'
     )
-    name = models.CharField(max_length=100)
-    order = models.IntegerField(default=0)
+    name   = models.CharField(max_length=100)
+    order  = models.IntegerField(default=0)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='in_progress',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

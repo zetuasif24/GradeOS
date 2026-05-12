@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import useAppStore from '../store/useAppStore'
-import { calcCg, ugcStatus, gpOfGrade, weightedPoints } from '../utils'
-import { GP, GCOL, SEM_COLORS } from '../constants'
+import { calcCg, ugcStatus, gpOfGrade, weightedPoints, calcOfficialCgpa } from '../utils'
+import { GP, GCOL } from '../constants'
 import { openModal } from '../components/Modals'
+
 
 function animNum(el, val, dec = 2, dur = 700) {
   if (!el) return
@@ -30,32 +31,38 @@ function GradeSelect({ value, courseId, semId }) {
 }
 
 export default function Semesters() {
-  const sems = useAppStore(s => s.sems)
-  const activeId = useAppStore(s => s.activeId)
-  const switchSem = useAppStore(s => s.switchSem)
-  const addCourse = useAppStore(s => s.addCourse)
-  const updateCourse = useAppStore(s => s.updateCourse)
-  const removeCourse = useAppStore(s => s.removeCourse)
+  const sems                 = useAppStore(s => s.sems)
+  const activeId             = useAppStore(s => s.activeId)
+  const switchSem            = useAppStore(s => s.switchSem)
+  const addCourse            = useAppStore(s => s.addCourse)
+  const updateCourse         = useAppStore(s => s.updateCourse)
+  const removeCourse         = useAppStore(s => s.removeCourse)
+  const updateSemesterStatus = useAppStore(s => s.updateSemesterStatus)
 
-  const sem = sems.find(s => s.id === activeId) || sems[0] || null
+  const sem   = sems.find(s => s.id === activeId) || sems[0] || null
   const semCg = sem ? calcCg(sem.courses) : 0
   const semHas = sem ? sem.courses.some(c => (parseFloat(c.credit) || 0) > 0) : false
   const { label: semChipLabel, cls: semChipCls } = ugcStatus(semCg, semHas)
 
-  let totalCr = 0, totalWPts = 0
-  sems.forEach(s => s.courses.forEach(c => {
-    const x = parseFloat(c.credit) || 0; totalCr += x; totalWPts += weightedPoints(c.grade, x)
-  }))
+  // Official CGPA — completed sems only (used for Total Credits)
+  const { totalCr: offCr } = calcOfficialCgpa(sems)
+
 
   // Animated refs
   const semDisplayRef = useRef(); const totalCrRef = useRef(); const semCountRef = useRef()
   useEffect(() => {
     if (semDisplayRef.current) { semDisplayRef.current.dataset.v = '0'; animNum(semDisplayRef.current, semCg.toFixed(2), 2) }
-    if (totalCrRef.current)   { totalCrRef.current.dataset.v = '0'; animNum(totalCrRef.current, totalCr, 0) }
-    if (semCountRef.current)  { semCountRef.current.dataset.v = '0'; animNum(semCountRef.current, sems.length, 0) }
+    if (totalCrRef.current)    { totalCrRef.current.dataset.v    = '0'; animNum(totalCrRef.current, offCr, 0) }
+    if (semCountRef.current)   { semCountRef.current.dataset.v   = '0'; animNum(semCountRef.current, sems.length, 0) }
   }, [activeId, sems])
 
   const semCr = sem ? sem.courses.reduce((s, c) => s + (parseFloat(c.credit) || 0), 0) : 0
+  const isIP  = sem?.status === 'in_progress'
+
+  const toggleStatus = () => {
+    if (!sem) return
+    updateSemesterStatus(sem.id, isIP ? 'completed' : 'in_progress')
+  }
 
   // Ensure a semester exists
   useEffect(() => {
@@ -67,16 +74,17 @@ export default function Semesters() {
       <div className="vhead"><h2 className="vtitle">Semester CGPA</h2><p className="vsub">Set course grades and calculate your semester GPA · Courses added in Course Tracker appear here automatically</p></div>
 
       <div className="calc-stats">
-        <div className="cstat">
+        <div className="cstat primary">
+          <div className="scard-glow" />
           <p className="cstat-label">This Semester CG</p>
-          <p className="cstat-val blue" ref={semDisplayRef} id="semDisplay">0.00</p>
+          <p className="cstat-val cstat-val-gradient" ref={semDisplayRef} id="semDisplay">0.00</p>
           <span className={`chip ${semChipCls}`}>{semChipLabel}</span>
-          <p className="cstat-sub">{sem ? sem.courses.length : 0} courses · {semCr} credits</p>
+          <p className="cstat-sub">{sem ? sem.courses.length : 0} courses · {semCr} cr</p>
         </div>
         <div className="cstat">
           <p className="cstat-label">Total Credits</p>
-          <p className="cstat-val" ref={totalCrRef} id="totalCrDisplay">0</p>
-          <p className="cstat-sub">all semesters</p>
+          <p className="cstat-val" ref={totalCrRef} id="totalCrSemsDisplay">0</p>
+          <p className="cstat-sub">completed semesters</p>
         </div>
         <div className="cstat">
           <p className="cstat-label">Semesters</p>
@@ -90,8 +98,9 @@ export default function Semesters() {
         <div className="sem-tabs-scroll">
           <div className="sem-tabs">
             {sems.map(s => (
-              <button key={s.id} className={`sem-tab ${s.id === (sem?.id) ? 'active' : ''}`} onClick={() => switchSem(s.id)}>
+              <button key={s.id} className={`sem-tab ${s.id === (sem?.id) ? 'active' : ''} ${s.status === 'in_progress' ? 'sem-tab-ip' : ''}`} onClick={() => switchSem(s.id)}>
                 <span>{s.name}</span>
+                {s.status === 'in_progress' && <span className="sem-tab-ip-dot" title="In Progress" />}
                 {sems.length > 1 && (
                   <span className="tab-x" onClick={e => { e.stopPropagation(); openModal('delSem', { id: s.id, name: s.name }) }}>✕</span>
                 )}
@@ -111,6 +120,7 @@ export default function Semesters() {
         </div>
       </div>
 
+
       {/* Course panel */}
       {sem && (
         <div className="glass-panel">
@@ -121,6 +131,30 @@ export default function Semesters() {
                 <span className="scg-lbl">SEM CG</span>
                 <span className="scg-val">{semCg.toFixed(2)}</span>
               </div>
+              {/* Status toggle */}
+              <button
+                className={`sem-status-toggle ${isIP ? 'toggle-ip' : 'toggle-done'}`}
+                onClick={toggleStatus}
+                title={isIP ? 'Click to mark as Completed' : 'Click to mark as In Progress'}
+              >
+                {isIP ? (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    In Progress
+                  </>
+                ) : (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    Completed
+                  </>
+                )}
+              </button>
             </div>
             <button className="add-course-btn" onClick={addCourse}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>

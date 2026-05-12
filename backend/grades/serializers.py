@@ -27,7 +27,7 @@ class SemesterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Semester
-        fields = ('id', 'name', 'order', 'courses', 'created_at', 'updated_at')
+        fields = ('id', 'name', 'order', 'status', 'courses', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 
@@ -35,7 +35,7 @@ class SemesterWriteSerializer(serializers.ModelSerializer):
     """Used for create/update — excludes nested courses."""
     class Meta:
         model = Semester
-        fields = ('id', 'name', 'order')
+        fields = ('id', 'name', 'order', 'status')
         read_only_fields = ('id',)
 
 

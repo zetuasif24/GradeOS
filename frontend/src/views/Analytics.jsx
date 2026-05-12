@@ -1,34 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react'
 import useAppStore from '../store/useAppStore'
-import { calcCg, ugcStatus, gpOfGrade, weightedPoints } from '../utils'
+import { calcCg, ugcStatus, gpOfGrade, weightedPoints, calcOfficialCgpa, calcEstimatedCgpa } from '../utils'
 import { GP, GCOL, SEM_COLORS } from '../constants'
 
 export default function Analytics() {
-  const sems = useAppStore(s => s.sems)
+  const sems  = useAppStore(s => s.sems)
   const theme = useAppStore(s => s.theme)
   const donutRef = useRef()
 
-  let totalCr = 0, totalWPts = 0
-  sems.forEach(s => s.courses.forEach(c => {
-    const x = parseFloat(c.credit) || 0; totalCr += x; totalWPts += weightedPoints(c.grade, x)
-  }))
-  const cgpa = totalCr ? totalWPts / totalCr : 0
+  // ── CGPA calculations ──
+  const { cgpa, totalCr, totalWPts } = calcOfficialCgpa(sems)
+  const { cgpa: estCgpa, totalCr: estCr } = calcEstimatedCgpa(sems)
+  const hasInProgress = sems.some(s => s.status === 'in_progress')
   const isDark = theme !== 'light'
 
-  // Trend SVG coords
-  const trendPts = sems.map(s => calcCg(s.courses))
+  const completedSems = sems.filter(s => s.status === 'completed')
+
+
+  // Trend SVG coords — completed sems only for official trend
+  const trendPts = completedSems.map(s => calcCg(s.courses))
   const getTrendCoords = () => {
-    if (sems.length < 2) return null
+    if (completedSems.length < 2) return null
     const W = 700, H = 160, P = 28
     const mn = Math.max(0, Math.min(...trendPts) - 0.3)
     const mx = Math.min(4, Math.max(...trendPts) + 0.3)
-    return trendPts.map((cg, i) => [P + i * (W - 2*P) / (sems.length-1), H - P - ((cg-mn)/(mx-mn))*(H-2*P)])
+    return trendPts.map((cg, i) => [P + i * (W - 2*P) / (completedSems.length-1), H - P - ((cg-mn)/(mx-mn))*(H-2*P)])
   }
   const tc = getTrendCoords()
 
-  // Cumulative coords
+  // Cumulative coords — completed sems only
   let cumCr = 0, cumW = 0
-  const cumulPts = sems.map((sem, i) => {
+  const cumulPts = completedSems.map((sem) => {
     sem.courses.forEach(c => { const x = parseFloat(c.credit)||0; cumCr+=x; cumW+=weightedPoints(c.grade,x) })
     return { cg: cumCr ? cumW/cumCr : 0, label: sem.name }
   })
@@ -41,7 +43,10 @@ export default function Analytics() {
   }
   const cc = getCumulCoords()
 
-  // Donut canvas
+  // Donut canvas — all sems with color distinction
+  // Store segment data in ref for hover hit-testing
+  const donutSegmentsRef = useRef([])
+
   useEffect(() => {
     const canvas = donutRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -49,16 +54,32 @@ export default function Analytics() {
     let tot=0; const data=[]
     sems.forEach((sem,i)=>{
       const cr=sem.courses.reduce((s,c)=>s+(parseFloat(c.credit)||0),0); tot+=cr
-      if(cr>0) data.push({label:sem.name,cr,color:SEM_COLORS[i%SEM_COLORS.length]})
+      if(cr>0) data.push({label:sem.name,cr,color:SEM_COLORS[i%SEM_COLORS.length],ip:sem.status==='in_progress'})
     })
     ctx.clearRect(0,0,W,H)
-    if(!data.length){ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=28;ctx.stroke();return}
+    if(!data.length){
+      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2)
+      ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=28;ctx.stroke()
+      donutSegmentsRef.current = []
+      return
+    }
     let a=-Math.PI/2
-    data.forEach(seg=>{const sw=(seg.cr/tot)*Math.PI*2;ctx.beginPath();ctx.arc(cx,cy,R,a,a+sw);ctx.strokeStyle=seg.color;ctx.lineWidth=28;ctx.lineCap='butt';ctx.stroke();a+=sw})
-    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=isDark?'#0d1020':'#fff';ctx.fill()
+    const segs = []
+    data.forEach(seg=>{
+      const sw=(seg.cr/tot)*Math.PI*2
+      ctx.beginPath();ctx.arc(cx,cy,R,a,a+sw)
+      ctx.strokeStyle=seg.ip?seg.color+'88':seg.color
+      ctx.lineWidth=28;ctx.lineCap='butt';ctx.stroke()
+      segs.push({ startAngle: a, endAngle: a+sw, label: seg.label, cr: seg.cr, color: seg.color })
+      a+=sw
+    })
+    donutSegmentsRef.current = segs
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2)
+    ctx.fillStyle=isDark?'#0d1020':'#fff';ctx.fill()
   }, [sems, theme])
 
-  // Grade counts
+
+  // Grade counts — from all sems
   const counts={};Object.keys(GP).forEach(g=>counts[g]=0)
   const gradeMap={};Object.keys(GP).forEach(g=>gradeMap[g]=[])
   sems.forEach(s=>s.courses.forEach(c=>{
@@ -90,10 +111,11 @@ export default function Analytics() {
   const insights=[]
   if(!total){insights.push('No courses added yet. Head to <strong>Semesters</strong> to start.')}
   else{
-    if(cgpa>=3.75) insights.push(`Outstanding! CGPA <strong>${cgpa.toFixed(2)}</strong> — top tier.`)
-    else if(cgpa>=3.50) insights.push(`CGPA <strong>${cgpa.toFixed(2)}</strong> — Very Good range.`)
-    else if(cgpa>=3.00) insights.push(`CGPA <strong>${cgpa.toFixed(2)}</strong> — aim for 3.50+.`)
-    else if(cgpa>0) insights.push(`CGPA <strong>${cgpa.toFixed(2)}</strong> — focus on improvement.`)
+    if(cgpa>=3.75) insights.push(`Outstanding! Cumulative GPA <strong>${cgpa.toFixed(2)}</strong> — top tier.`)
+    else if(cgpa>=3.50) insights.push(`Cumulative GPA <strong>${cgpa.toFixed(2)}</strong> — Very Good range.`)
+    else if(cgpa>=3.00) insights.push(`Cumulative GPA <strong>${cgpa.toFixed(2)}</strong> — aim for 3.50+.`)
+    else if(cgpa>0) insights.push(`Cumulative GPA <strong>${cgpa.toFixed(2)}</strong> — focus on improvement.`)
+    if(hasInProgress) insights.push(`Estimated CGPA (incl. in-progress): <strong>${estCgpa.toFixed(2)}</strong>`)
     if(aRange>0) insights.push(`<strong>${aRange}</strong> of ${total} courses in A-range (${((aRange/total)*100).toFixed(0)}%).`)
     if(fails>0) insights.push(`<strong>${fails}</strong> failed course${fails>1?'s':''} dragging your CGPA.`)
     if(sortedS.length>=2){
@@ -106,18 +128,24 @@ export default function Analytics() {
 
   const maxC=sems.length?Math.max(...sems.map(s=>s.courses.length)):0
 
-  // Accordion state — tracks which grade keys are expanded
+  // Accordion state
   const [openGrades, setOpenGrades] = useState([])
   const toggleGrade = (g) => setOpenGrades(prev => prev.includes(g) ? prev.filter(k=>k!==g) : [...prev, g])
 
   return (
     <>
       <div className="vhead"><h2 className="vtitle">Analytics</h2><p className="vsub">Deep dive into your academic performance</p></div>
+
       <div className="analytics-grid">
 
-        {/* Cumulative GPA */}
+        {/* Cumulative GPA — completed sems only */}
         <div className="glass-panel an-panel an-wide">
-          <p className="an-label">Cumulative GPA Progress</p>
+          <p className="an-label">
+            Cumulative GPA Progress
+            {completedSems.length < sems.length && (
+              <span className="an-label-note">completed semesters only</span>
+            )}
+          </p>
           <div className="cumulative-wrap">
             <svg viewBox="0 0 700 140" preserveAspectRatio="none" style={{width:'100%',height:'100%'}}>
               {cc?(<>
@@ -125,7 +153,7 @@ export default function Analytics() {
                 <path d={`M${cc[0][0]},140 `+cc.map(p=>`L${p[0]},${p[1]}`).join(' ')+` L${cc[cc.length-1][0]},140 Z`} fill="url(#cg)"/>
                 <polyline points={cc.map(p=>p.join(',')).join(' ')} fill="none" stroke="#818cf8" strokeWidth="2.5" strokeLinejoin="round"/>
                 {cc.map(([x,y],i)=><g key={i}><circle cx={x} cy={y} r="4" fill="#818cf8" stroke={isDark?'#0d1020':'#f0f2fa'} strokeWidth="2"/><text x={x} y={y-9} textAnchor="middle" fontSize="10" fill="#818cf8" fontFamily="JetBrains Mono,monospace">{cumulPts[i].cg.toFixed(2)}</text></g>)}
-              </>):<text x="350" y="70" textAnchor="middle" fill="rgba(255,255,255,.12)" fontFamily="DM Sans" fontSize="13">Add 2+ semesters to see trend</text>}
+              </>):<text x="350" y="70" textAnchor="middle" fill="rgba(255,255,255,.12)" fontFamily="DM Sans" fontSize="13">Complete 2+ semesters to see trend</text>}
             </svg>
           </div>
         </div>
@@ -144,9 +172,14 @@ export default function Analytics() {
           {low&&low!==best&&<span className={`chip ${ugcStatus(calcCg(low.courses),true).cls}`}>{ugcStatus(calcCg(low.courses),true).label}</span>}
         </div>
 
-        {/* GPA Trend */}
+        {/* GPA Trend — completed sems */}
         <div className="glass-panel an-panel an-wide">
-          <p className="an-label">GPA Trend</p>
+          <p className="an-label">
+            GPA Trend
+            {completedSems.length < sems.length && (
+              <span className="an-label-note">completed semesters only</span>
+            )}
+          </p>
           <div className="trend-wrap">
             <svg className="trend-svg" viewBox="0 0 700 160" preserveAspectRatio="none">
               {tc?(<>
@@ -154,34 +187,40 @@ export default function Analytics() {
                 <path d={`M${tc[0][0]},160 `+tc.map(p=>`L${p[0]},${p[1]}`).join(' ')+` L${tc[tc.length-1][0]},160 Z`} fill="url(#tg)"/>
                 <polyline points={tc.map(p=>p.join(',')).join(' ')} fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeLinejoin="round"/>
                 {tc.map(([x,y],i)=><g key={i}><circle cx={x} cy={y} r="5" fill="#22d3ee" stroke={isDark?'#0d1020':'#f0f2fa'} strokeWidth="2"/><text x={x} y={y-10} textAnchor="middle" fontSize="10" fill="#22d3ee" fontFamily="JetBrains Mono,monospace">{trendPts[i].toFixed(2)}</text></g>)}
-              </>):<text x="350" y="80" textAnchor="middle" fill="rgba(255,255,255,.12)" fontFamily="DM Sans" fontSize="13">Add 2+ semesters to see trend</text>}
+              </>):<text x="350" y="80" textAnchor="middle" fill="rgba(255,255,255,.12)" fontFamily="DM Sans" fontSize="13">Complete 2+ semesters to see trend</text>}
             </svg>
           </div>
         </div>
 
-        {/* Donut */}
         <div className="glass-panel an-panel an-pair-left">
           <p className="an-label">Credit Distribution</p>
           <div className="donut-outer">
             <div className="donut-canvas-wrap">
-              <canvas ref={donutRef} width="180" height="180"/>
-              <div className="donut-center"><span className="donut-num">{totalCr}</span><span className="donut-sub">credits</span></div>
+              <canvas ref={donutRef} width="180" height="180"
+                style={{ cursor: 'default' }}
+              />
+              <div className="donut-center"><span className="donut-num">{estCr}</span><span className="donut-sub">credits</span></div>
             </div>
             <div className="donut-legend">
               {sems.filter(s=>s.courses.reduce((a,c)=>a+(parseFloat(c.credit)||0),0)>0).map((s,i)=>(
-                <div key={s.id} className="dl-row"><div className="dl-dot" style={{background:SEM_COLORS[i%SEM_COLORS.length]}}/><span>{s.name}: {s.courses.reduce((a,c)=>a+(parseFloat(c.credit)||0),0)} cr</span></div>
+                <div key={s.id} className="dl-row">
+                  <div className="dl-dot" style={{background:SEM_COLORS[i%SEM_COLORS.length], opacity: s.status==='in_progress'?0.5:1}}/>
+                  <span>{s.name}: {s.courses.reduce((a,c)=>a+(parseFloat(c.credit)||0),0)} cr</span>
+                  {s.status==='in_progress'&&<span className="dl-ip-tag">~</span>}
+                </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Sem Compare */}
+        {/* Sem Compare — all sems, in-progress marked */}
         <div className="glass-panel an-panel an-pair-right">
           <p className="an-label">Semester Comparison</p>
           <div className="sem-compare-wrap">
             {(()=>{const cgs=sems.map(s=>calcCg(s.courses));const mx=Math.max(0.01,...cgs);return sems.map((sem,i)=>{
               const cg=cgs[i],col=SEM_COLORS[i%SEM_COLORS.length],{label}=ugcStatus(cg,sem.courses.some(c=>(parseFloat(c.credit)||0)>0))
-              return(<div key={sem.id} className="scmp-row"><div className="scmp-head"><span>{sem.name}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:col}}>{cg.toFixed(2)} — {label}</span></div><div className="scmp-track"><div className="scmp-fill" style={{width:`${(cg/mx)*100}%`,background:col}}/></div></div>)
+              const isIP=sem.status==='in_progress'
+              return(<div key={sem.id} className={`scmp-row${isIP?' scmp-row-ip':''}`}><div className="scmp-head"><span>{sem.name}{isIP&&<span className="scmp-ip-tag">~</span>}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:col}}>{cg.toFixed(2)} — {label}</span></div><div className="scmp-track"><div className="scmp-fill" style={{width:`${(cg/mx)*100}%`,background:col,opacity:isIP?0.6:1}}/></div></div>)
             })})()}
           </div>
         </div>
@@ -234,18 +273,18 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Heatmap */}
+        {/* Heatmap — all sems, in-progress visually marked */}
         <div className="glass-panel an-panel an-wide">
           <p className="an-label">Performance Heatmap — Grade per course across semesters</p>
           <div className="heatmap-wrap">
             {!maxC?<p style={{fontSize:12,color:'var(--text3)'}}>No courses yet.</p>:(
               <div style={{display:'grid',gridTemplateColumns:`48px repeat(${sems.length},1fr)`,gap:4}}>
                 <div className="hm-col-label"/>
-                {sems.map(sem=>{const p=sem.name.split(' ');return<div key={sem.id} className="hm-col-label" title={sem.name}>{p.length>=2?p[0].slice(0,3)+"'"+p[1].slice(2):sem.name}</div>})}
+                {sems.map(sem=>{const p=sem.name.split(' ');const isIP=sem.status==='in_progress';return<div key={sem.id} className={`hm-col-label${isIP?' hm-col-ip':''}`} title={sem.name+(isIP?' (In Progress)':'')}>{p.length>=2?p[0].slice(0,3)+"'"+p[1].slice(2):sem.name}{isIP&&<span className="hm-ip-mark">~</span>}</div>})}
                 {Array.from({length:maxC},(_,r)=>(<React.Fragment key={r}>
                   <div className="hm-row-label">C{r+1}</div>
-                  {sems.map(sem=>{const c=sem.courses[r];const ok=c&&(parseFloat(c.credit)||0)>0;const col=ok?GCOL[c.grade]||'#6b7280':null
-                    return(<div key={sem.id} className="hm-cell" style={ok?{background:`${col}28`,border:`1px solid ${col}55`,color:col}:{background:'rgba(128,128,128,.06)',border:'1px solid rgba(128,128,128,.1)'}} title={ok?`${c.grade} — ${c.name||'Course'} · ${sem.name}`:''} >{ok?c.grade:''}</div>)
+                  {sems.map(sem=>{const c=sem.courses[r];const ok=c&&(parseFloat(c.credit)||0)>0;const col=ok?GCOL[c.grade]||'#6b7280':null;const isIP=sem.status==='in_progress'
+                    return(<div key={sem.id} className="hm-cell" style={ok?{background:`${col}${isIP?'14':'28'}`,border:`1px ${isIP?'dashed':'solid'} ${col}55`,color:col,opacity:isIP?0.75:1}:{background:'rgba(128,128,128,.06)',border:'1px solid rgba(128,128,128,.1)'}} title={ok?`${c.grade} — ${c.name||'Course'} · ${sem.name}${isIP?' (In Progress)':''}`:''} >{ok?c.grade:''}</div>)
                   })}
                 </React.Fragment>))}
               </div>

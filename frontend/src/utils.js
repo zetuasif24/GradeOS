@@ -13,6 +13,32 @@ export function calcCg(courses) {
   return cr ? p / cr : 0
 }
 
+/** CGPA using only completed semesters — the official cumulative GPA. */
+export function calcOfficialCgpa(sems) {
+  let totalCr = 0, totalWPts = 0
+  sems.filter(s => s.status === 'completed').forEach(s =>
+    s.courses.forEach(c => {
+      const x = parseFloat(c.credit) || 0
+      totalCr  += x
+      totalWPts += weightedPoints(c.grade, x)
+    })
+  )
+  return { cgpa: totalCr ? totalWPts / totalCr : 0, totalCr, totalWPts }
+}
+
+/** CGPA using ALL semesters (in-progress included) — the estimated value. */
+export function calcEstimatedCgpa(sems) {
+  let totalCr = 0, totalWPts = 0
+  sems.forEach(s =>
+    s.courses.forEach(c => {
+      const x = parseFloat(c.credit) || 0
+      totalCr  += x
+      totalWPts += weightedPoints(c.grade, x)
+    })
+  )
+  return { cgpa: totalCr ? totalWPts / totalCr : 0, totalCr, totalWPts }
+}
+
 export function ugcStatus(cg, has) {
   if (!has) return { label: 'No Data', cls: 'chip-none' }
   if (cg >= 4.00) return { label: 'Outstanding', cls: 'chip-outstanding' }

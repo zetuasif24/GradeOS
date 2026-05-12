@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { getSemesters, createSemester, deleteSemester as apiDeleteSem,
          createCourse, updateCourse as apiUpdateCourse, deleteCourse as apiDeleteCourse,
+         updateSemester as apiUpdateSemester,
          clearAll as apiClearAll, getPerformance, upsertPerformance } from '../api/grades'
 import { updateProfile as apiUpdateProfile } from '../api/auth'
 import { sortSems, uid } from '../utils'
@@ -46,8 +47,9 @@ const useAppStore = create((set, get) => ({
   addSemester: async (name) => {
     const { sems } = get()
     const data = await createSemester(name, sems.length)
-    const newSem = { ...data, courses: data.courses || [] }
+    const newSem = { ...data, courses: data.courses || [], status: data.status || 'completed' }
     const sorted = sortSems([...sems, newSem])
+    // Explicitly switch to the new semester after adding
     set({ sems: sorted, activeId: newSem.id })
   },
 
@@ -63,6 +65,20 @@ const useAppStore = create((set, get) => ({
   },
 
   switchSem: (id) => set({ activeId: id }),
+
+  // ── Update semester status ──
+  updateSemesterStatus: async (id, status) => {
+    // Optimistic update
+    set(state => ({
+      sems: state.sems.map(s => s.id === id ? { ...s, status } : s)
+    }))
+    try {
+      await apiUpdateSemester(id, { status })
+    } catch {
+      // Revert on failure
+      get().loadSemesters()
+    }
+  },
 
   // ── Add course to active semester ──
   addCourse: async () => {

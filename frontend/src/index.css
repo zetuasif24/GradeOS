@@ -137,7 +137,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;
 
 /* ═══════════════════════════ STATS GRID ════════════════════════ */
 .stats-grid,.calc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.calc-stats{grid-template-columns:repeat(3,1fr)}
+.calc-stats{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+
 
 .scard,.cstat{
   position:relative;overflow:hidden;
@@ -292,7 +293,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;
   display:flex;align-items:center;justify-content:space-between;
   padding:14px 18px;border-bottom:1px solid var(--bord);gap:10px;flex-wrap:wrap;
 }
-.cp-head-left{display:flex;align-items:center;gap:10px}
+.cp-head-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
 .cp-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)}
 .sem-cg-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;
   background:var(--cyan-d);border:1px solid var(--cyan-b);border-radius:20px}
@@ -740,11 +742,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;
 .donut-canvas-wrap canvas{display:block}
 .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;
   align-items:center;justify-content:center;pointer-events:none}
-.donut-tip{position:absolute;pointer-events:none;z-index:20;
+.donut-tip{position:fixed;pointer-events:none;z-index:9999;
   background:rgba(13,16,32,.96);border:1px solid var(--bord2);padding:7px 11px;
   border-radius:8px;font-size:12px;color:var(--text);white-space:nowrap;
-  opacity:0;transition:opacity .15s;box-shadow:0 4px 20px rgba(0,0,0,.5);
-  left:50%;top:110%;transform:translateX(-50%);margin-top:4px}
+  opacity:0;transition:opacity .15s;box-shadow:0 4px 20px rgba(0,0,0,.5);}
 .donut-tip.show{opacity:1}
 [data-theme="light"] .donut-tip{background:rgba(255,255,255,.98);color:#111}
 
@@ -1524,6 +1525,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;
   border-color:var(--cyan-b);color:var(--cyan);font-weight:700;
   box-shadow:0 0 10px rgba(34,211,238,.1);
 }
+/* In-progress tab — unselected: looks like a normal tab, only the dot distinguishes it */
+.ct-sem-tab.ct-sem-tab-ip{
+  /* no special bg or text — the dot is the indicator */
+}
+.ct-sem-tab.ct-sem-tab-ip:hover{
+  background:var(--surf2);color:var(--text);
+}
+/* In-progress tab — selected: full amber treatment */
+.ct-sem-tab.ct-sem-tab-ip.active{
+  background:linear-gradient(135deg,rgba(251,191,36,.18),rgba(251,146,60,.12));
+  border-color:rgba(251,191,36,.4);color:#fbbf24;
+  box-shadow:0 0 12px rgba(251,191,36,.15);
+}
 .ct-sem-tab-x{
   font-size:10px;color:var(--red);opacity:0;
   transition:opacity var(--t);line-height:1;margin-left:2px;
@@ -1912,10 +1926,311 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;
 }
 @media(max-width:600px){
   .ct-course-header{flex-direction:column;align-items:flex-start;gap:10px}
-  .ct-ch-grade{flex-direction:row;gap:8px;align-items:center;width:100%;justify-content:space-between}
-  .ct-ch-grade-val{font-size:22px}
+  /* Right section: full width, both items side by side */
+  .ct-ch-right{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap}
+  /* Obtained: take remaining space, never overflow */
+  .ct-ch-obtained{flex:1;min-width:0}
+  .ct-ch-obt-row{flex-wrap:wrap;gap:6px}
   .ct-ch-obt-num{font-size:17px}
+  /* Grade badge: fixed size, never overflow */
+  .ct-ch-grade{flex-shrink:0;padding:8px 12px;border-radius:10px;width:auto;max-width:90px;overflow:hidden}
+  .ct-ch-grade-val{font-size:22px}
   .ct-tab-name{max-width:100px}
   .ct-form-panel,.ct-prediction-panel{padding:13px}
 }
 
+/* ═══════════════════════════ SEMESTER STATUS SYSTEM ════════════════ */
+
+/* ── Status toggle button (inside course panel header) ── */
+.sem-status-toggle{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:20px;
+  font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif;
+  cursor:pointer;transition:all var(--t);border:1px solid;
+  white-space:nowrap;
+}
+.sem-status-toggle.toggle-ip{
+  background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);
+  color:#fbbf24;
+}
+.sem-status-toggle.toggle-ip:hover{
+  background:rgba(251,191,36,.18);box-shadow:0 0 10px rgba(251,191,36,.15);
+}
+.sem-status-toggle.toggle-done{
+  background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);
+  color:#4ade80;
+}
+.sem-status-toggle.toggle-done:hover{
+  background:rgba(74,222,128,.18);box-shadow:0 0 10px rgba(74,222,128,.15);
+}
+
+/* ── In-Progress banner ── */
+.sem-ip-banner{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 16px;
+  background:rgba(251,191,36,.06);
+  border:1px solid rgba(251,191,36,.25);
+  border-radius:var(--r);
+  font-size:13px;color:var(--text2);line-height:1.5;
+  animation:fadeUp .25s ease both;
+}
+.sem-ip-banner svg{flex-shrink:0;color:#fbbf24}
+.sem-ip-banner span{flex:1;min-width:0}
+.sem-ip-banner strong{color:#fbbf24}
+.sem-ip-banner em{font-style:normal;color:#fbbf24}
+.sem-ip-complete-btn{
+  padding:6px 14px;border-radius:20px;
+  background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);
+  color:#4ade80;font-size:12px;font-weight:600;
+  font-family:'DM Sans',sans-serif;cursor:pointer;
+  transition:all var(--t);white-space:nowrap;flex-shrink:0;
+}
+.sem-ip-complete-btn:hover{background:rgba(74,222,128,.2);box-shadow:0 0 10px rgba(74,222,128,.15)}
+
+/* ── In-Progress dot on sem tab ── */
+.sem-tab-ip-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#fbbf24;
+  flex-shrink:0;
+  animation:glowPulse 2s ease-in-out infinite;
+  box-shadow:0 0 5px rgba(251,191,36,.6);
+}
+.sem-tab.sem-tab-ip.active{
+  background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,146,60,.08));
+  border-color:rgba(251,191,36,.35);color:#fbbf24;
+}
+
+/* ── Estimated CGPA card (Dashboard) ── */
+.estimated-cgpa-card{
+  border-color:rgba(251,191,36,.22);
+  background:linear-gradient(135deg,rgba(251,191,36,.05),rgba(251,146,60,.04));
+}
+.estimated-cgpa-card:hover{border-color:rgba(251,191,36,.38)}
+.est-glow{
+  background:radial-gradient(circle,rgba(251,191,36,.16),transparent 70%);
+}
+.est-badge{
+  display:inline-flex;align-items:center;padding:2px 7px;
+  background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);
+  border-radius:12px;font-size:9px;font-weight:700;
+  color:#fbbf24;letter-spacing:.3px;margin-left:6px;
+  vertical-align:middle;
+}
+.est-bar-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#fbbf24,#fb923c);
+  width:0%;transition:width .8s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px rgba(251,191,36,.4);
+}
+
+/* Label row with dot on right */
+.scard-label-row{
+  display:flex;align-items:center;justify-content:space-between;
+}
+/* Amber pulsing dot — mirrors sem-tab-ip-dot */
+.est-ip-dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#fbbf24;flex-shrink:0;
+  animation:glowPulse 2s ease-in-out infinite;
+  box-shadow:0 0 6px rgba(251,191,36,.7);
+}
+
+/* ── Semester overview card — in-progress variant ── */
+.sov-card-inprogress{
+  border-color:rgba(251,191,36,.22);
+}
+.sov-card-inprogress::before{
+  background:linear-gradient(90deg,#fbbf24,#fb923c) !important;
+}
+.sov-card-top{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.sem-ip-badge{
+  display:inline-flex;align-items:center;padding:2px 7px;
+  background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28);
+  border-radius:12px;font-size:9px;font-weight:700;
+  color:#fbbf24;letter-spacing:.3px;flex-shrink:0;
+}
+
+/* ── Analytics CGPA split banner ── */
+.an-cgpa-split-banner{
+  display:flex;align-items:center;justify-content:center;gap:0;
+  background:var(--surf);border:1px solid var(--bord2);
+  border-radius:var(--r);overflow:hidden;
+  animation:fadeUp .25s ease both;
+}
+.an-split-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:3px;padding:14px 18px;
+}
+.an-split-divider{
+  width:1px;background:var(--bord2);align-self:stretch;
+}
+.an-split-label{
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.6px;
+}
+.an-split-val{
+  font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;
+  line-height:1;
+}
+.an-split-val.official{color:var(--cyan)}
+.an-split-val.estimated{color:#fbbf24}
+.an-split-sub{font-size:10px;color:var(--text3)}
+
+/* ── Analytics label note ── */
+.an-label-note{
+  margin-left:8px;font-size:9px;font-weight:600;
+  color:var(--text3);text-transform:none;letter-spacing:0;
+  background:rgba(255,255,255,.05);border:1px solid var(--bord2);
+  padding:2px 6px;border-radius:8px;
+}
+
+/* ── Heatmap in-progress column ── */
+.hm-col-ip{opacity:.65;font-style:italic}
+.hm-ip-mark{margin-left:2px;font-size:8px;color:#fbbf24;font-style:normal}
+
+/* ── Sem compare in-progress row ── */
+.scmp-row-ip .scmp-head{opacity:.75}
+.scmp-ip-tag{
+  margin-left:5px;font-size:9px;font-weight:700;
+  color:#fbbf24;font-style:normal;
+}
+
+/* ── Donut legend in-progress tag ── */
+.dl-ip-tag{font-size:9px;color:#fbbf24;margin-left:4px;font-weight:700}
+
+/* ── Mobile: increase title card (vhead) height ── */
+@media(max-width:600px){
+  .vhead{
+    padding-bottom:10px;
+    padding-top:4px;
+    min-height:64px;
+  }
+  .vtitle{font-size:20px}
+  .vsub{margin-top:5px;font-size:11.5px}
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CGPA VALUE GRADIENT UTILITIES
+══════════════════════════════════════════════════════════════════ */
+
+/* Cyan→violet gradient — used on Cumulative GPA stat value */
+.cstat-val-gradient{
+  background:linear-gradient(135deg,#22d3ee 0%,#818cf8 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  /* fallback colour for browsers that don't support clip */
+  color:var(--cyan);
+}
+/* Amber→orange gradient — used on Estimated CGPA stat value */
+.cstat-val-amber{
+  background:linear-gradient(135deg,#fbbf24 0%,#fb923c 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  color:#fbbf24;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   COURSE TRACKER — MOBILE HEADER SPACING
+   Ensures course name, credits pill, progress bar, and grade badge
+   each have their own row with enough room on small screens.
+══════════════════════════════════════════════════════════════════ */
+@media(max-width:600px){
+  /* Stack left/right sections vertically */
+  .ct-course-header{
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+    padding:14px 16px;
+  }
+
+  /* Left: course name gets full width, generous bottom gap */
+  .ct-ch-left{
+    gap:8px;
+  }
+  .ct-course-name-input{
+    font-size:17px;
+    padding-bottom:2px;
+  }
+
+  /* Meta row (sem tag + credits) — add more vertical space */
+  .ct-ch-meta{
+    gap:10px;
+    margin-top:4px;
+  }
+  .ct-ch-sem-tag{
+    font-size:11px;
+    padding:3px 10px;
+  }
+  .ct-ch-cr-wrap{
+    gap:5px;
+  }
+  .ct-fh-cr-input{
+    width:50px;
+    padding:3px 7px;
+    font-size:12px;
+  }
+  .ct-fh-cr-label{
+    font-size:12px;
+  }
+
+  /* Right: obtained+grade — full width, no overflow */
+  .ct-ch-right{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:nowrap;
+    overflow:hidden;
+  }
+
+  /* Progress / obtained section — takes remaining space */
+  .ct-ch-obtained{
+    flex:1;
+    min-width:0;
+    gap:6px;
+  }
+  .ct-ch-obt-row{
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .ct-ch-obt-num{
+    font-size:17px;
+  }
+  .ct-ob-track{
+    height:4px;
+    margin-top:2px;
+  }
+  .ct-ob-pct-pill{
+    font-size:11px;
+    padding:2px 8px;
+  }
+
+  /* Current grade badge — compact & constrained so it never overflows */
+  .ct-ch-grade{
+    padding:8px 12px;
+    border-radius:10px;
+    flex-shrink:0;
+    max-width:80px;
+    min-width:52px;
+    text-align:center;
+  }
+  .ct-ch-grade-val{
+    font-size:22px;
+  }
+  .ct-ch-grade-lbl{
+    font-size:9px;
+    margin-top:2px;
+  }
+
+  /* Hide GPA Trend scrollbar on mobile — still scrollable but invisible */
+  .trend-wrap{
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .trend-wrap::-webkit-scrollbar{display:none}
+}

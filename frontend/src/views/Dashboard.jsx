@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import useAppStore from '../store/useAppStore'
-import { calcCg, ugcStatus, weightedPoints, gpOfGrade } from '../utils'
+import { calcCg, ugcStatus, weightedPoints, gpOfGrade, calcOfficialCgpa, calcEstimatedCgpa } from '../utils'
 import { GP, GCOL, SEM_COLORS } from '../constants'
 import { openModal } from '../components/Modals'
 
@@ -37,33 +37,35 @@ export default function Dashboard({ setActiveView }) {
   const sems = useAppStore(s => s.sems)
   const switchSem = useAppStore(s => s.switchSem)
 
-  // Compute totals
-  let totalCr = 0, totalWPts = 0
-  sems.forEach(s => s.courses.forEach(c => {
-    const x = parseFloat(c.credit) || 0
-    totalCr += x
-    totalWPts += weightedPoints(c.grade, x)
-  }))
-  const cgpa = totalCr ? totalWPts / totalCr : 0
+  // Official CGPA — completed sems only
+  const { cgpa, totalCr, totalWPts } = calcOfficialCgpa(sems)
   const hasData = totalCr > 0
+
+  // Estimated CGPA — all sems (only relevant when in-progress sems exist)
+  const { cgpa: estCgpa, totalCr: estCr } = calcEstimatedCgpa(sems)
+  const hasInProgress = sems.some(s => s.status === 'in_progress')
+  const hasEstData = estCr > 0
+
   const totalCourses = sems.reduce((a, s) => a + s.courses.length, 0)
   const avgCr = sems.length ? totalCr / sems.length : 0
 
   const { label: chipLabel, cls: chipCls } = ugcStatus(cgpa, hasData)
+  const { label: estChipLabel, cls: estChipCls } = ugcStatus(estCgpa, hasEstData)
 
   // Animated stat refs
   const cgpaRef = useRef(); const crRef = useRef()
-  const courseRef = useRef(); const semRef = useRef(); const avgRef = useRef()
+  const courseRef = useRef(); const semRef = useRef()
+  const estCgpaRef = useRef()
 
   useEffect(() => {
-    if (cgpaRef.current) { cgpaRef.current.dataset.v = '0'; animNum(cgpaRef.current, cgpa.toFixed(2), 2) }
-    if (crRef.current)   { crRef.current.dataset.v = '0'; animNum(crRef.current, totalCr, 0) }
-    if (courseRef.current){ courseRef.current.dataset.v = '0'; animNum(courseRef.current, totalCourses, 0) }
-    if (semRef.current)  { semRef.current.dataset.v = '0'; animNum(semRef.current, sems.length, 0) }
-    if (avgRef.current)  { avgRef.current.dataset.v = '0'; animNum(avgRef.current, avgCr.toFixed(1), 1) }
+    if (cgpaRef.current)   { cgpaRef.current.dataset.v   = '0'; animNum(cgpaRef.current, cgpa.toFixed(2), 2) }
+    if (estCgpaRef.current){ estCgpaRef.current.dataset.v = '0'; animNum(estCgpaRef.current, estCgpa.toFixed(2), 2) }
+    if (crRef.current)     { crRef.current.dataset.v     = '0'; animNum(crRef.current, totalCr, 0) }
+    if (courseRef.current) { courseRef.current.dataset.v  = '0'; animNum(courseRef.current, totalCourses, 0) }
+    if (semRef.current)    { semRef.current.dataset.v    = '0'; animNum(semRef.current, sems.length, 0) }
   }, [sems])
 
-  // Grade counts
+  // Grade counts — from all sems for distribution display
   const counts = {}
   Object.keys(GP).forEach(g => counts[g] = 0)
   sems.forEach(s => s.courses.forEach(c => { if (counts[c.grade] !== undefined) counts[c.grade]++ }))
@@ -87,7 +89,7 @@ export default function Dashboard({ setActiveView }) {
     })
   })
 
-  // Quick insights
+  // Quick insights — use official CGPA
   const total = Object.values(counts).reduce((a, b) => a + b, 0)
   const aRange = (counts['A+'] || 0) + (counts['A'] || 0) + (counts['A-'] || 0)
   const fails = counts['F'] || 0
@@ -133,14 +135,33 @@ export default function Dashboard({ setActiveView }) {
         <div className="scard primary">
           <div className="scard-glow" />
           <p className="scard-label">Cumulative GPA</p>
-          <p className="scard-val" ref={cgpaRef} id="d_cgpa">0.00</p>
+          <p className="scard-val cstat-val-gradient" ref={cgpaRef} id="d_cgpa">0.00</p>
           <div className="scard-bar"><div className="scard-bar-fill" style={{ width: `${(cgpa / 4) * 100}%` }} /></div>
           <span className={`chip ${chipCls}`}>{chipLabel}</span>
+          <p className="scard-sub">completed semesters only</p>
         </div>
+
+        {/* Estimated CGPA — only shown when there are in-progress semesters */}
+        {hasInProgress && (
+          <div className="scard estimated-cgpa-card">
+            <div className="scard-glow est-glow" />
+            <div className="scard-label-row">
+              <p className="scard-label">Estimated CGPA</p>
+              <span className="est-ip-dot" title="In Progress" />
+            </div>
+            <p className="scard-val cstat-val-amber" ref={estCgpaRef} id="d_estCgpa">0.00</p>
+            <div className="scard-bar">
+              <div className="scard-bar-fill est-bar-fill" style={{ width: `${(estCgpa / 4) * 100}%` }} />
+            </div>
+            <span className={`chip ${estChipCls}`}>{estChipLabel}</span>
+            <p className="scard-sub">Includes ongoing semesters</p>
+          </div>
+        )}
+
         <div className="scard">
           <p className="scard-label">Total Credits</p>
           <p className="scard-val" ref={crRef} id="d_totalCr">0</p>
-          <p className="scard-sub">across all semesters</p>
+          <p className="scard-sub">completed semesters</p>
         </div>
         <div className="scard">
           <p className="scard-label">Total Courses</p>
@@ -151,11 +172,6 @@ export default function Dashboard({ setActiveView }) {
           <p className="scard-label">Semesters</p>
           <p className="scard-val" ref={semRef} id="d_semCount">0</p>
           <p className="scard-sub">logged</p>
-        </div>
-        <div className="scard hide-mobile">
-          <p className="scard-label">Avg Credits / Sem</p>
-          <p className="scard-val" ref={avgRef} id="d_avgCr">0.0</p>
-          <p className="scard-sub">per semester</p>
         </div>
       </div>
 
@@ -169,9 +185,14 @@ export default function Dashboard({ setActiveView }) {
           const has = sem.courses.some(c => (parseFloat(c.credit) || 0) > 0)
           const { label, cls } = ugcStatus(cg, has)
           const col = cgColor(cg, has)
+          const isIP = sem.status === 'in_progress'
           return (
-            <div key={sem.id} className="sov-card" onClick={() => { setActiveView('calculator'); switchSem(sem.id) }}>
-              <p className="sov-name">{sem.name}</p>
+            <div key={sem.id} className={`sov-card ${isIP ? 'sov-card-inprogress' : ''}`}
+                 onClick={() => { setActiveView('calculator'); switchSem(sem.id) }}>
+              <div className="sov-card-top">
+                <p className="sov-name">{sem.name}</p>
+                {isIP && <span className="sem-ip-badge">In Progress</span>}
+              </div>
               <p className="sov-cg" style={{ color: col }}>{cg.toFixed(2)}</p>
               <p className="sov-info">{sem.courses.length} courses · {cr} credits</p>
               <span className={`chip ${cls} sov-chip`}>{label}</span>
