@@ -2,24 +2,25 @@
 Data migration: 0002_create_admin
 
 Creates the default admin (superuser) account if it doesn't already exist.
-This runs automatically as part of `python manage.py migrate` on every deploy.
-
-Credentials:
-    email:    bigcat@gmail.com
-    password: bigcat1234
+Credentials are read from environment variables ADMIN_EMAIL and ADMIN_PASSWORD.
+This migration is a no-op if the account already exists.
 """
 
+import os
 from django.db import migrations
 
 
 def create_admin(apps, schema_editor):
-    # Use the historical User model provided by the migration framework
     from django.contrib.auth import get_user_model
     User = get_user_model()
 
-    email = "bigcat@gmail.com"
-    password = "bigcat1234"
-    name = "Admin"
+    email    = os.environ.get("ADMIN_EMAIL", "")
+    password = os.environ.get("ADMIN_PASSWORD", "")
+    name     = os.environ.get("ADMIN_NAME", "Admin")
+
+    if not email or not password:
+        print("\n[create_admin] ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping.")
+        return
 
     if not User.objects.filter(email=email).exists():
         User.objects.create_superuser(email=email, password=password, name=name)
@@ -29,7 +30,6 @@ def create_admin(apps, schema_editor):
 
 
 def reverse_create_admin(apps, schema_editor):
-    # Reversing this migration does NOT delete the admin account (safety measure)
     pass
 
 

@@ -2,14 +2,14 @@
 Management command: create_admin
 
 Creates the default admin (superuser) account if it doesn't already exist.
-Credentials are read from environment variables so they are never hard-coded.
+Credentials are read from environment variables — nothing is hardcoded.
 
 Usage:
     python manage.py create_admin
 
-Environment variables (set these in your deployment dashboard):
-    ADMIN_EMAIL     – e-mail for the admin account  (default: bigcat@gmail.com)
-    ADMIN_PASSWORD  – password for the admin account (required, no default)
+Environment variables (set in your deployment dashboard):
+    ADMIN_EMAIL     – e-mail for the admin account  (required)
+    ADMIN_PASSWORD  – password for the admin account (required)
     ADMIN_NAME      – display name                   (default: Admin)
 """
 
@@ -24,15 +24,14 @@ class Command(BaseCommand):
     help = "Create the default admin account if it does not already exist."
 
     def handle(self, *args, **options):
-        email    = os.environ.get("ADMIN_EMAIL", "bigcat@gmail.com")
-        password = os.environ.get("ADMIN_PASSWORD")
+        email    = os.environ.get("ADMIN_EMAIL", "")
+        password = os.environ.get("ADMIN_PASSWORD", "")
         name     = os.environ.get("ADMIN_NAME", "Admin")
 
-        if not password:
+        if not email or not password:
             self.stderr.write(
-                self.style.ERROR(
-                    "ADMIN_PASSWORD environment variable is not set. "
-                    "Admin account was NOT created."
+                self.style.WARNING(
+                    "ADMIN_EMAIL or ADMIN_PASSWORD not set — skipping admin creation."
                 )
             )
             return
