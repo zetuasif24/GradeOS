@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import useAppStore from '../store/useAppStore'
-import { calcCg, ugcStatus, gpOfGrade, weightedPoints, calcOfficialCgpa } from '../utils'
+import { calcCg, ugcStatus, gpOfGrade, weightedPoints, calcOfficialCgpa, calcEstimatedCgpa } from '../utils'
 import { GP, GCOL } from '../constants'
 import { openModal } from '../components/Modals'
 
@@ -44,15 +44,15 @@ export default function Semesters() {
   const semHas = sem ? sem.courses.some(c => (parseFloat(c.credit) || 0) > 0) : false
   const { label: semChipLabel, cls: semChipCls } = ugcStatus(semCg, semHas)
 
-  // Official CGPA — completed sems only (used for Total Credits)
-  const { totalCr: offCr } = calcOfficialCgpa(sems)
+  // All credits (including in-progress) — what the user sees in Total Credits card
+  const { totalCr: allCr } = calcEstimatedCgpa(sems)
 
 
   // Animated refs
   const semDisplayRef = useRef(); const totalCrRef = useRef(); const semCountRef = useRef()
   useEffect(() => {
     if (semDisplayRef.current) { semDisplayRef.current.dataset.v = '0'; animNum(semDisplayRef.current, semCg.toFixed(2), 2) }
-    if (totalCrRef.current)    { totalCrRef.current.dataset.v    = '0'; animNum(totalCrRef.current, offCr, 0) }
+    if (totalCrRef.current)    { totalCrRef.current.dataset.v    = '0'; animNum(totalCrRef.current, allCr, 0) }
     if (semCountRef.current)   { semCountRef.current.dataset.v   = '0'; animNum(semCountRef.current, sems.length, 0) }
   }, [activeId, sems])
 
@@ -84,7 +84,7 @@ export default function Semesters() {
         <div className="cstat">
           <p className="cstat-label">Total Credits</p>
           <p className="cstat-val" ref={totalCrRef} id="totalCrSemsDisplay">0</p>
-          <p className="cstat-sub">completed semesters</p>
+          <p className="cstat-sub">credits added so far</p>
         </div>
         <div className="cstat">
           <p className="cstat-label">Semesters</p>

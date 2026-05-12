@@ -30,7 +30,13 @@ export default function Sidebar({ activeView, setActiveView, theme, toggleTheme 
       view: 'grading', label: 'Grading',
       icon: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></>
     },
+    // Admin-only nav item (appended only when user.is_staff)
+    ...(user?.is_staff ? [{
+      view: 'admin', label: 'Admin Panel', isAdmin: true,
+      icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    }] : []),
   ]
+
 
   return (
     <aside className="sidebar">
@@ -47,10 +53,10 @@ export default function Sidebar({ activeView, setActiveView, theme, toggleTheme 
       </div>
 
       <nav className="sb-nav">
-        {navItems.map(({ view, label, icon }) => (
+        {navItems.map(({ view, label, icon, isAdmin }) => (
           <button
             key={view}
-            className={`snav ${activeView === view ? 'active' : ''}`}
+            className={`snav ${activeView === view ? 'active' : ''} ${isAdmin ? 'snav-admin' : ''}`}
             data-view={view}
             onClick={() => setActiveView(view)}
           >

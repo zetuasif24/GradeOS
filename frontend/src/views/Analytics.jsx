@@ -158,19 +158,22 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Best/Lowest */}
-        <div className="glass-panel an-panel an-highlight-card">
-          <p className="an-label">🏆 Best Semester</p>
-          <p className="an-hl-name">{best?.name||'—'}</p>
-          <p className="an-hl-val" style={{color:'var(--green)'}}>{best?calcCg(best.courses).toFixed(2):'—'}</p>
-          {best&&<span className={`chip ${ugcStatus(calcCg(best.courses),true).cls}`}>{ugcStatus(calcCg(best.courses),true).label}</span>}
+        {/* Best/Lowest — side by side */}
+        <div style={{ display:'flex', gap:12, gridColumn:'1/-1' }}>
+          <div className="glass-panel an-panel an-highlight-card" style={{ flex:1 }}>
+            <p className="an-label">🏆 Best Semester</p>
+            <p className="an-hl-name">{best?.name||'—'}</p>
+            <p className="an-hl-val" style={{color:'var(--green)'}}>{best?calcCg(best.courses).toFixed(2):'—'}</p>
+            {best&&<span className={`chip ${ugcStatus(calcCg(best.courses),true).cls}`}>{ugcStatus(calcCg(best.courses),true).label}</span>}
+          </div>
+          <div className="glass-panel an-panel an-highlight-card" style={{ flex:1 }}>
+            <p className="an-label">📉 Lowest Semester</p>
+            <p className="an-hl-name">{low&&low!==best?low.name:'—'}</p>
+            <p className="an-hl-val" style={{color:'var(--red)'}}>{low&&low!==best?calcCg(low.courses).toFixed(2):'—'}</p>
+            {low&&low!==best&&<span className={`chip ${ugcStatus(calcCg(low.courses),true).cls}`}>{ugcStatus(calcCg(low.courses),true).label}</span>}
+          </div>
         </div>
-        <div className="glass-panel an-panel an-highlight-card">
-          <p className="an-label">📉 Lowest Semester</p>
-          <p className="an-hl-name">{low&&low!==best?low.name:'—'}</p>
-          <p className="an-hl-val" style={{color:'var(--red)'}}>{low&&low!==best?calcCg(low.courses).toFixed(2):'—'}</p>
-          {low&&low!==best&&<span className={`chip ${ugcStatus(calcCg(low.courses),true).cls}`}>{ugcStatus(calcCg(low.courses),true).label}</span>}
-        </div>
+
 
         {/* GPA Trend — completed sems */}
         <div className="glass-panel an-panel an-wide">

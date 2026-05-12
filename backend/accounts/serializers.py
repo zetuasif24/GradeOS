@@ -41,6 +41,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'id': self.user.id,
             'email': self.user.email,
             'name': self.user.name,
+            'is_staff': self.user.is_staff,
         }
         return data
 
@@ -89,8 +90,21 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'created_at')
-        read_only_fields = ('id', 'email', 'created_at')
+        fields = ('id', 'email', 'name', 'is_staff', 'created_at')
+        read_only_fields = ('id', 'email', 'is_staff', 'created_at')
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Read-only serializer for admin user listing."""
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'name', 'is_staff', 'is_active', 'created_at')
+        read_only_fields = fields
+
+
+class AdminResetPasswordSerializer(serializers.Serializer):
+    """Admin sets a new password for any user."""
+    new_password = serializers.CharField(required=True, write_only=True, min_length=6)
 
 
 class UpdateProfileSerializer(serializers.ModelSerializer):

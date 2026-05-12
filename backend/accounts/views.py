@@ -1,13 +1,18 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from .serializers import (RegisterSerializer, UserSerializer,
                           CustomTokenObtainPairSerializer,
-                          UpdateProfileSerializer, ChangePasswordSerializer)
+                          UpdateProfileSerializer, ChangePasswordSerializer,
+                          AdminUserSerializer, AdminResetPasswordSerializer)
+
+User = get_user_model()
 
 
 class RegisterView(generics.CreateAPIView):
@@ -91,3 +96,62 @@ class ChangePasswordView(APIView):
         request.user.set_password(serializer.validated_data['new_password'])
         request.user.save()
         return Response({'detail': 'Password changed successfully.'})
+
+
+# ── Admin Views ────────────────────────────────────────────────────────────────
+
+class AdminUserListView(generics.ListAPIView):
+    """GET /api/auth/admin/users/ — list all users (admin only, supports ?search=)."""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    serializer_class = AdminUserSerializer
+
+    def get_queryset(self):
+        qs = User.objects.all().order_by('-created_at')
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(Q(email__icontains=search) | Q(name__icontains=search))
+        return qs
+
+
+class AdminUserDetailView(APIView):
+    """GET/DELETE /api/auth/admin/users/<id>/ — retrieve or delete a user (admin only)."""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_object(self, pk):
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        user = self.get_object(pk)
+        if not user:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = AdminUserSerializer(user)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        user = self.get_object(pk)
+        if not user:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if user == request.user:
+            return Response({'detail': 'You cannot delete your own account.'}, status=status.HTTP_400_BAD_REQUEST)
+        user.delete()
+        return Response({'detail': 'User deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminResetPasswordView(APIView):
+    """POST /api/auth/admin/users/<id>/reset-password/ — admin sets a new password (admin only)."""
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = AdminResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        return Response({'detail': f'Password for {user.email} has been reset.'})
+
