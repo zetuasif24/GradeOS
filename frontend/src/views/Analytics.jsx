@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import useAppStore from '../store/useAppStore'
-import { calcCg, ugcStatus, gpOfGrade, weightedPoints, calcOfficialCgpa, calcEstimatedCgpa } from '../utils'
+import { calcCg, ugcStatus, weightedPoints, calcOfficialCgpa, calcEstimatedCgpa } from '../utils'
 import { GP, GCOL, SEM_COLORS } from '../constants'
 
 export default function Analytics() {
@@ -10,7 +10,7 @@ export default function Analytics() {
 
   // ── CGPA calculations ──
   const { cgpa, totalCr, totalWPts } = calcOfficialCgpa(sems)
-  const { cgpa: estCgpa, totalCr: estCr } = calcEstimatedCgpa(sems)
+  const { cgpa: estCgpa } = calcEstimatedCgpa(sems)
   const hasInProgress = sems.some(s => s.status === 'in_progress')
   const isDark = theme !== 'light'
 
@@ -43,7 +43,7 @@ export default function Analytics() {
   }
   const cc = getCumulCoords()
 
-  // Donut canvas — all sems with color distinction
+  // Donut canvas — completed sems only
   // Store segment data in ref for hover hit-testing
   const donutSegmentsRef = useRef([])
 
@@ -52,9 +52,9 @@ export default function Analytics() {
     const ctx = canvas.getContext('2d')
     const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=70,r=42
     let tot=0; const data=[]
-    sems.forEach((sem,i)=>{
+    completedSems.forEach((sem,i)=>{
       const cr=sem.courses.reduce((s,c)=>s+(parseFloat(c.credit)||0),0); tot+=cr
-      if(cr>0) data.push({label:sem.name,cr,color:SEM_COLORS[i%SEM_COLORS.length],ip:sem.status==='in_progress'})
+      if(cr>0) data.push({label:sem.name,cr,color:SEM_COLORS[i%SEM_COLORS.length]})
     })
     ctx.clearRect(0,0,W,H)
     if(!data.length){
@@ -68,7 +68,7 @@ export default function Analytics() {
     data.forEach(seg=>{
       const sw=(seg.cr/tot)*Math.PI*2
       ctx.beginPath();ctx.arc(cx,cy,R,a,a+sw)
-      ctx.strokeStyle=seg.ip?seg.color+'88':seg.color
+      ctx.strokeStyle=seg.color
       ctx.lineWidth=28;ctx.lineCap='butt';ctx.stroke()
       segs.push({ startAngle: a, endAngle: a+sw, label: seg.label, cr: seg.cr, color: seg.color })
       a+=sw
@@ -79,10 +79,10 @@ export default function Analytics() {
   }, [sems, theme])
 
 
-  // Grade counts — from all sems
+  // Grade counts — completed sems only
   const counts={};Object.keys(GP).forEach(g=>counts[g]=0)
   const gradeMap={};Object.keys(GP).forEach(g=>gradeMap[g]=[])
-  sems.forEach(s=>s.courses.forEach(c=>{
+  completedSems.forEach(s=>s.courses.forEach(c=>{
     if(counts[c.grade]!==undefined) counts[c.grade]++
     if(gradeMap[c.grade]!==undefined) gradeMap[c.grade].push({name:c.name||'Unnamed',sem:s.name})
   }))
@@ -91,7 +91,7 @@ export default function Analytics() {
   const aRange=(counts['A+']||0)+(counts['A']||0)+(counts['A-']||0)
   const fails=counts['F']||0
 
-  const withData=sems.filter(s=>s.courses.some(c=>(parseFloat(c.credit)||0)>0))
+  const withData=completedSems.filter(s=>s.courses.some(c=>(parseFloat(c.credit)||0)>0))
   const sortedS=[...withData].sort((a,b)=>calcCg(b.courses)-calcCg(a.courses))
   const best=sortedS[0],low=sortedS[sortedS.length-1]
 
@@ -126,7 +126,7 @@ export default function Analytics() {
     if(needed>0&&needed<=4) insights.push(`Need <strong>${needed.toFixed(2)}</strong> GPA next 15-credit sem to reach Excellent.`)
   }
 
-  const maxC=sems.length?Math.max(...sems.map(s=>s.courses.length)):0
+  const maxC=completedSems.length?Math.max(...completedSems.map(s=>s.courses.length)):0
 
   // Accordion state
   const [openGrades, setOpenGrades] = useState([])
@@ -199,28 +199,26 @@ export default function Analytics() {
               <canvas ref={donutRef} width="180" height="180"
                 style={{ cursor: 'default' }}
               />
-              <div className="donut-center"><span className="donut-num">{estCr}</span><span className="donut-sub">credits</span></div>
+              <div className="donut-center"><span className="donut-num">{totalCr}</span><span className="donut-sub">credits</span></div>
             </div>
             <div className="donut-legend">
-              {sems.filter(s=>s.courses.reduce((a,c)=>a+(parseFloat(c.credit)||0),0)>0).map((s,i)=>(
+              {completedSems.filter(s=>s.courses.reduce((a,c)=>a+(parseFloat(c.credit)||0),0)>0).map((s,i)=>(
                 <div key={s.id} className="dl-row">
-                  <div className="dl-dot" style={{background:SEM_COLORS[i%SEM_COLORS.length], opacity: s.status==='in_progress'?0.5:1}}/>
+                  <div className="dl-dot" style={{background:SEM_COLORS[i%SEM_COLORS.length]}}/>
                   <span>{s.name}: {s.courses.reduce((a,c)=>a+(parseFloat(c.credit)||0),0)} cr</span>
-                  {s.status==='in_progress'&&<span className="dl-ip-tag">~</span>}
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Sem Compare — all sems, in-progress marked */}
+        {/* Sem Compare — completed sems only */}
         <div className="glass-panel an-panel an-pair-right">
           <p className="an-label">Semester Comparison</p>
           <div className="sem-compare-wrap">
-            {(()=>{const cgs=sems.map(s=>calcCg(s.courses));const mx=Math.max(0.01,...cgs);return sems.map((sem,i)=>{
+            {(()=>{const cgs=completedSems.map(s=>calcCg(s.courses));const mx=Math.max(0.01,...cgs);return completedSems.map((sem,i)=>{
               const cg=cgs[i],col=SEM_COLORS[i%SEM_COLORS.length],{label}=ugcStatus(cg,sem.courses.some(c=>(parseFloat(c.credit)||0)>0))
-              const isIP=sem.status==='in_progress'
-              return(<div key={sem.id} className={`scmp-row${isIP?' scmp-row-ip':''}`}><div className="scmp-head"><span>{sem.name}{isIP&&<span className="scmp-ip-tag">~</span>}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:col}}>{cg.toFixed(2)} — {label}</span></div><div className="scmp-track"><div className="scmp-fill" style={{width:`${(cg/mx)*100}%`,background:col,opacity:isIP?0.6:1}}/></div></div>)
+              return(<div key={sem.id} className="scmp-row"><div className="scmp-head"><span>{sem.name}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:col}}>{cg.toFixed(2)} — {label}</span></div><div className="scmp-track"><div className="scmp-fill" style={{width:`${(cg/mx)*100}%`,background:col}}/></div></div>)
             })})()}
           </div>
         </div>
@@ -273,18 +271,18 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Heatmap — all sems, in-progress visually marked */}
+        {/* Heatmap — completed sems only */}
         <div className="glass-panel an-panel an-wide">
           <p className="an-label">Performance Heatmap — Grade per course across semesters</p>
           <div className="heatmap-wrap">
             {!maxC?<p style={{fontSize:12,color:'var(--text3)'}}>No courses yet.</p>:(
-              <div style={{display:'grid',gridTemplateColumns:`48px repeat(${sems.length},1fr)`,gap:4}}>
+              <div style={{display:'grid',gridTemplateColumns:`48px repeat(${completedSems.length},1fr)`,gap:4}}>
                 <div className="hm-col-label"/>
-                {sems.map(sem=>{const p=sem.name.split(' ');const isIP=sem.status==='in_progress';return<div key={sem.id} className={`hm-col-label${isIP?' hm-col-ip':''}`} title={sem.name+(isIP?' (In Progress)':'')}>{p.length>=2?p[0].slice(0,3)+"'"+p[1].slice(2):sem.name}{isIP&&<span className="hm-ip-mark">~</span>}</div>})}
+                {completedSems.map(sem=>{const p=sem.name.split(' ');return<div key={sem.id} className="hm-col-label" title={sem.name}>{p.length>=2?p[0].slice(0,3)+"'"+p[1].slice(2):sem.name}</div>})}
                 {Array.from({length:maxC},(_,r)=>(<React.Fragment key={r}>
                   <div className="hm-row-label">C{r+1}</div>
-                  {sems.map(sem=>{const c=sem.courses[r];const ok=c&&(parseFloat(c.credit)||0)>0;const col=ok?GCOL[c.grade]||'#6b7280':null;const isIP=sem.status==='in_progress'
-                    return(<div key={sem.id} className="hm-cell" style={ok?{background:`${col}${isIP?'14':'28'}`,border:`1px ${isIP?'dashed':'solid'} ${col}55`,color:col,opacity:isIP?0.75:1}:{background:'rgba(128,128,128,.06)',border:'1px solid rgba(128,128,128,.1)'}} title={ok?`${c.grade} — ${c.name||'Course'} · ${sem.name}${isIP?' (In Progress)':''}`:''} >{ok?c.grade:''}</div>)
+                  {completedSems.map(sem=>{const c=sem.courses[r];const ok=c&&(parseFloat(c.credit)||0)>0;const col=ok?GCOL[c.grade]||'#6b7280':null
+                    return(<div key={sem.id} className="hm-cell" style={ok?{background:`${col}28`,border:`1px solid ${col}55`,color:col}:{background:'rgba(128,128,128,.06)',border:'1px solid rgba(128,128,128,.1)'}} title={ok?`${c.grade} — ${c.name||'Course'} · ${sem.name}`:''} >{ok?c.grade:''}</div>)
                   })}
                 </React.Fragment>))}
               </div>

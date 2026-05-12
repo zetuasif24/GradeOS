@@ -46,8 +46,9 @@ export default function Dashboard({ setActiveView }) {
   const hasInProgress = sems.some(s => s.status === 'in_progress')
   const hasEstData = estCr > 0
 
-  const totalCourses = sems.reduce((a, s) => a + s.courses.length, 0)
-  const avgCr = sems.length ? totalCr / sems.length : 0
+  const completedSems = sems.filter(s => s.status !== 'in_progress')
+  const totalCourses = completedSems.reduce((a, s) => a + s.courses.length, 0)
+  const completedSemCount = completedSems.length
 
   const { label: chipLabel, cls: chipCls } = ugcStatus(cgpa, hasData)
   const { label: estChipLabel, cls: estChipCls } = ugcStatus(estCgpa, hasEstData)
@@ -62,15 +63,15 @@ export default function Dashboard({ setActiveView }) {
     if (estCgpaRef.current){ estCgpaRef.current.dataset.v = '0'; animNum(estCgpaRef.current, estCgpa.toFixed(2), 2) }
     if (crRef.current)     { crRef.current.dataset.v     = '0'; animNum(crRef.current, totalCr, 0) }
     if (courseRef.current) { courseRef.current.dataset.v  = '0'; animNum(courseRef.current, totalCourses, 0) }
-    if (semRef.current)    { semRef.current.dataset.v    = '0'; animNum(semRef.current, sems.length, 0) }
+    if (semRef.current)    { semRef.current.dataset.v    = '0'; animNum(semRef.current, completedSemCount, 0) }
   }, [sems])
 
-  // Grade counts — from all sems for distribution display
+  // Grade counts — completed sems only
   const counts = {}
   Object.keys(GP).forEach(g => counts[g] = 0)
-  sems.forEach(s => s.courses.forEach(c => { if (counts[c.grade] !== undefined) counts[c.grade]++ }))
+  completedSems.forEach(s => s.courses.forEach(c => { if (counts[c.grade] !== undefined) counts[c.grade]++ }))
   const allCoursesList = []
-  sems.forEach(sem => sem.courses.forEach(c => {
+  completedSems.forEach(sem => sem.courses.forEach(c => {
     if ((parseFloat(c.credit) || 0) > 0)
       allCoursesList.push({ name: c.name || 'Unnamed', grade: c.grade, gp: gpOfGrade(c.grade), sem: sem.name })
   }))
@@ -80,7 +81,7 @@ export default function Dashboard({ setActiveView }) {
     : allCoursesList.slice(0, 5)
   const worst = [...allCoursesList].sort((a, b) => a.gp - b.gp).filter(c => c.gp < 3.0)
 
-  // Recent activity
+  // Recent activity — all sems (including in-progress, as it's a log)
   const acts = []
   ;[...sems].reverse().forEach(sem => {
     ;[...sem.courses].reverse().forEach(c => {
@@ -95,14 +96,14 @@ export default function Dashboard({ setActiveView }) {
   const fails = counts['F'] || 0
   const bRange = (counts['B+'] || 0) + (counts['B'] || 0) + (counts['B-'] || 0)
   const cOrBelow = (counts['C+'] || 0) + (counts['C'] || 0) + (counts['D'] || 0)
-  const semCgs = sems.map(s => calcCg(s.courses)).filter(v => v > 0)
+  const semCgs = completedSems.map(s => calcCg(s.courses)).filter(v => v > 0)
   let consistency = '—'
   if (semCgs.length >= 2) {
     const mean = semCgs.reduce((a, b) => a + b, 0) / semCgs.length
     const sd = Math.sqrt(semCgs.map(v => (v - mean) ** 2).reduce((a, b) => a + b, 0) / semCgs.length)
     consistency = sd < 0.15 ? '🟢 Very Consistent' : sd < 0.35 ? '🟡 Moderate' : '🔴 High Variance'
   }
-  const sortedSems = sems.filter(s => s.courses.some(c => (parseFloat(c.credit) || 0) > 0))
+  const sortedSems = completedSems.filter(s => s.courses.some(c => (parseFloat(c.credit) || 0) > 0))
     .sort((a, b) => calcCg(b.courses) - calcCg(a.courses))
   const bestSemLabel = sortedSems.length ? `${sortedSems[0].name} (${calcCg(sortedSems[0].courses).toFixed(2)})` : '—'
   const { label: statusLabel } = ugcStatus(cgpa, hasData)
@@ -120,7 +121,7 @@ export default function Dashboard({ setActiveView }) {
     { l: 'Failed Courses', v: fails > 0 ? fails : 'None', c: fails > 0 ? '#ef4444' : '#10b981' },
     { l: 'Consistency', v: consistency, c: 'var(--text2)' },
     { l: 'Best Semester', v: bestSemLabel, c: '#f59e0b' },
-    { l: 'Avg Credits/Sem', v: sems.length ? (totalCr / sems.length).toFixed(1) : '—', c: 'var(--text2)' },
+    { l: 'Avg Credits/Sem', v: completedSemCount ? (totalCr / completedSemCount).toFixed(1) : '—', c: 'var(--text2)' },
   ]
 
   // Grade dist for dashboard
@@ -166,12 +167,12 @@ export default function Dashboard({ setActiveView }) {
         <div className="scard">
           <p className="scard-label">Total Courses</p>
           <p className="scard-val" ref={courseRef} id="d_totalCourses">0</p>
-          <p className="scard-sub">all semesters</p>
+          <p className="scard-sub">completed semesters</p>
         </div>
         <div className="scard">
           <p className="scard-label">Semesters</p>
           <p className="scard-val" ref={semRef} id="d_semCount">0</p>
-          <p className="scard-sub">logged</p>
+          <p className="scard-sub">completed</p>
         </div>
       </div>
 

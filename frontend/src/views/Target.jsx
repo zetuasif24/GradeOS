@@ -6,18 +6,17 @@ export default function Target() {
   const sems = useAppStore(s => s.sems)
   const [targetCgpa, setTargetCgpa] = useState('')
   const [targetCredits, setTargetCredits] = useState('')
-  const [targetRemSems, setTargetRemSems] = useState('')
-  const [gradMode, setGradMode] = useState(false)
+
+  const completedSems = sems.filter(s => s.status !== 'in_progress')
 
   let curCr = 0, curWPts = 0
-  sems.forEach(s => s.courses.forEach(c => {
+  completedSems.forEach(s => s.courses.forEach(c => {
     const x = parseFloat(c.credit) || 0; curCr += x; curWPts += weightedPoints(c.grade, x)
   }))
   const curCgpa = curCr ? curWPts / curCr : 0
 
   const tgt = parseFloat(targetCgpa)
   const planned = parseFloat(targetCredits)
-  const remSems = Math.max(1, parseFloat(targetRemSems) || 1)
 
   let needed = null, neededStr = '—', noteStr = 'Enter your target CGPA and planned credits above.'
   if (tgt && planned) {
@@ -26,9 +25,7 @@ export default function Target() {
     else if (needed > 4) { neededStr = 'Not achievable'; noteStr = '⚠️ Target not achievable with planned credits.' }
     else {
       neededStr = needed.toFixed(2)
-      noteStr = gradMode
-        ? `Avg GPA of ${needed.toFixed(2)} per semester across ${remSems} semester${remSems!==1?'s':''} (${planned} cr total) → CGPA ${tgt.toFixed(2)}.`
-        : `You need ${needed.toFixed(2)} GPA this semester to reach CGPA ${tgt.toFixed(2)}.`
+      noteStr = `You need ${needed.toFixed(2)} GPA this semester to reach CGPA ${tgt.toFixed(2)}.`
     }
   }
 
@@ -48,34 +45,15 @@ export default function Target() {
               placeholder="e.g. 3.75" value={targetCgpa} onChange={e => setTargetCgpa(e.target.value)} />
           </div>
 
-          <div className="ti-toggle-row">
-            <label className="ti-toggle-label">
-              <input type="checkbox" id="gradToggle" checked={gradMode} onChange={e => setGradMode(e.target.checked)} />
-              <span className="ti-toggle-track"><span className="ti-toggle-thumb" /></span>
-              <span className="ti-toggle-text">Total Graduation Mode</span>
-            </label>
-            <span className="ti-toggle-sub">
-              {gradMode ? 'Avg GPA per future semester to hit your CGPA target' : 'Uses remaining degree credits & future semesters'}
-            </span>
-          </div>
-
           <div className="ti-group">
-            <label className="ti-label">{gradMode ? 'Total Remaining Credits (Degree)' : 'Planned Credits (Next Semester)'}</label>
-            <input className="ti-input" type="number" id="targetCredits" min="1" max="500" step="0.5"
+            <label className="ti-label">Planned Credits (Next Semester)</label>
+            <input className="ti-input" type="number" id="targetCredits" min="1" max="200" step="0.5"
               placeholder="e.g. 15" value={targetCredits} onChange={e => setTargetCredits(e.target.value)} />
           </div>
 
-          {gradMode && (
-            <div className="ti-group">
-              <label className="ti-label">Remaining Semesters</label>
-              <input className="ti-input" type="number" id="targetRemSems" min="1" max="20" step="1"
-                placeholder="e.g. 4" value={targetRemSems} onChange={e => setTargetRemSems(e.target.value)} />
-            </div>
-          )}
-
           <div className="ti-divider" />
           <div className="ti-result">
-            <p className="tr-label">{gradMode ? 'Required Avg GPA Per Future Semester' : 'Required GPA This Semester'}</p>
+            <p className="tr-label">Required GPA This Semester</p>
             <p className="tr-val">{neededStr}</p>
             <p className="tr-note">{noteStr}</p>
           </div>
@@ -107,7 +85,7 @@ export default function Target() {
                 const newCgpa = ((curWPts + gpa * planned) / (curCr + planned)).toFixed(2)
                 return (
                   <div key={l} className="sc-row">
-                    <span>{l} {gradMode ? `(~${(planned / remSems).toFixed(1)} cr/sem)` : 'this semester'}</span>
+                    <span>{l} this semester</span>
                     <span className="sc-val">CGPA → {newCgpa}</span>
                   </div>
                 )
