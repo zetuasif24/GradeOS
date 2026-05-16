@@ -137,7 +137,7 @@ class AdminUserDetailView(APIView):
         if user == request.user:
             return Response({'detail': 'You cannot delete your own account.'}, status=status.HTTP_400_BAD_REQUEST)
         user.delete()
-        return Response({'detail': 'User deleted.'}, status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminResetPasswordView(APIView):

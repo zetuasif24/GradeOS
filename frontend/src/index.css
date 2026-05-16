@@ -2393,3 +2393,123 @@ body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;
   .admin-toolbar{flex-direction:column;align-items:stretch}
 }
 
+/* ── Admin Modal Components ── */
+.admin-confirm-icon{
+  width:52px;height:52px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;margin:0 auto 14px;
+  background:var(--violet-d);border:1px solid var(--violet-b);color:var(--violet);
+}
+.admin-confirm-icon.danger{
+  background:var(--red-d);border-color:var(--red-b);color:var(--red);
+}
+.admin-confirm-title{
+  font-family:'Syne',sans-serif;font-size:17px;font-weight:700;
+  color:var(--text);margin-bottom:8px;
+}
+.admin-confirm-desc{
+  font-size:13px;color:var(--text2);line-height:1.6;
+}
+.admin-confirm-warn{
+  font-size:12px;color:var(--red);font-weight:500;
+}
+.admin-pw-field{
+  display:flex;flex-direction:column;gap:6px;margin:14px 0 4px;text-align:left;
+}
+.admin-pw-err{
+  font-size:12px;color:var(--red);margin-top:4px;
+}
+.admin-success{
+  padding:10px 14px;border-radius:8px;background:rgba(74,222,128,.1);
+  border:1px solid rgba(74,222,128,.3);color:#4ade80;font-size:13px;margin:8px 0;
+}
+/* mbtn danger override (red) */
+.mbtn.danger{background:var(--red-d);border-color:var(--red-b);color:var(--red)}
+.mbtn.danger:hover{background:rgba(248,113,113,.22)}
+.mbtn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ═══════════════════ ADMIN MODALS — Premium am-* system ══════════════════ */
+.am-card{position:relative;overflow:hidden;width:100%;max-width:400px;border-radius:20px;
+  background:linear-gradient(160deg,rgba(16,19,32,.99) 0%,rgba(10,13,22,.99) 100%);
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset;
+  animation:popIn .26s cubic-bezier(.34,1.56,.64,1) both}
+.am-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px;border-radius:20px 20px 0 0}
+.am-card-danger::before {background:linear-gradient(90deg,#f87171,#fb923c)}
+.am-card-cyan::before   {background:linear-gradient(90deg,#22d3ee,#818cf8)}
+.am-card-success::before{background:linear-gradient(90deg,#4ade80,#22d3ee)}
+.am-card-danger {box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 20px rgba(248,113,113,.06) inset}
+.am-card-cyan   {box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 20px rgba(34,211,238,.06) inset}
+.am-card-success{box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 20px rgba(74,222,128,.06) inset}
+
+.am-body{padding:32px 28px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+
+.am-icon{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  margin-bottom:18px;position:relative;flex-shrink:0}
+.am-icon::before{content:'';position:absolute;inset:-8px;border-radius:50%;opacity:.14;
+  animation:amGlow 2.5s ease-in-out infinite}
+.am-icon-red  {background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.32);color:#f87171}
+.am-icon-red::before  {background:radial-gradient(circle,#f87171,transparent 70%)}
+.am-icon-cyan {background:rgba(34,211,238,.10);border:1.5px solid rgba(34,211,238,.28);color:#22d3ee}
+.am-icon-cyan::before {background:radial-gradient(circle,#22d3ee,transparent 70%)}
+.am-icon-green{background:rgba(74,222,128,.10);border:1.5px solid rgba(74,222,128,.28);color:#4ade80}
+.am-icon-green::before{background:radial-gradient(circle,#4ade80,transparent 70%)}
+@keyframes amGlow{0%,100%{opacity:.12;transform:scale(1)}50%{opacity:.3;transform:scale(1.14)}}
+
+.am-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:var(--text);
+  margin-bottom:6px;letter-spacing:-.3px}
+.am-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+
+.am-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;
+  background:rgba(129,140,248,.09);border:1px solid rgba(129,140,248,.2);border-radius:99px;
+  font-size:12px;font-weight:600;color:var(--violet);word-break:break-all;max-width:100%}
+.am-pill-green{background:rgba(74,222,128,.09);border-color:rgba(74,222,128,.22);color:#4ade80}
+
+.am-warn{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+  background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.18);border-radius:10px;
+  font-size:12px;color:#f87171;text-align:left;margin-top:14px}
+
+.am-err{font-size:12px;color:var(--red);margin-top:10px;width:100%;text-align:center}
+
+.am-pw-wrap{width:100%;margin-top:16px;text-align:left}
+.am-pw-label{display:block;font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
+.am-pw-input{width:100%;padding:12px 14px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;color:var(--text);
+  font-size:14px;font-family:'DM Sans',sans-serif;outline:none;
+  transition:border-color .18s,box-shadow .18s}
+.am-pw-input:focus{border-color:rgba(34,211,238,.45);box-shadow:0 0 0 3px rgba(34,211,238,.08)}
+.am-pw-input::placeholder{color:rgba(255,255,255,.18)}
+
+.am-divider{height:1px;background:rgba(255,255,255,.06)}
+
+.am-actions{display:flex;gap:10px;padding:20px 24px}
+.am-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:11px 16px;border-radius:12px;font-size:13px;font-weight:700;
+  font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid;
+  transition:all .18s;letter-spacing:.1px}
+.am-btn:disabled{opacity:.45;cursor:not-allowed}
+.am-ghost{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);color:var(--text2)}
+.am-ghost:hover:not(:disabled){background:rgba(255,255,255,.08);color:var(--text)}
+.am-red{background:linear-gradient(135deg,rgba(248,113,113,.14),rgba(251,146,60,.08));
+  border-color:rgba(248,113,113,.35);color:#f87171}
+.am-red:hover:not(:disabled){background:linear-gradient(135deg,rgba(248,113,113,.24),rgba(251,146,60,.16));
+  border-color:rgba(248,113,113,.55);box-shadow:0 0 20px rgba(248,113,113,.18)}
+.am-cyan{background:linear-gradient(135deg,rgba(34,211,238,.12),rgba(129,140,248,.09));
+  border-color:rgba(34,211,238,.32);color:#22d3ee}
+.am-cyan:hover:not(:disabled){background:linear-gradient(135deg,rgba(34,211,238,.22),rgba(129,140,248,.16));
+  border-color:rgba(34,211,238,.52);box-shadow:0 0 20px rgba(34,211,238,.15)}
+
+.am-spin{width:13px;height:13px;border-radius:50%;border:2px solid rgba(248,113,113,.3);
+  border-top-color:#f87171;animation:amSpin .7s linear infinite;flex-shrink:0}
+.am-spin-cyan{border-color:rgba(34,211,238,.3);border-top-color:#22d3ee}
+@keyframes amSpin{to{transform:rotate(360deg)}}
+
+[data-theme="light"] .am-card{
+  background:linear-gradient(160deg,rgba(255,255,255,.99),rgba(248,249,255,.99));
+  border-color:rgba(0,0,0,.07);
+  box-shadow:0 24px 60px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.03) inset}
+[data-theme="light"] .am-divider{background:rgba(0,0,0,.07)}
+[data-theme="light"] .am-pw-input{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.12);color:#111}
+[data-theme="light"] .am-pw-input::placeholder{color:rgba(0,0,0,.25)}
+[data-theme="light"] .am-ghost{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1)}
+[data-theme="light"] .am-ghost:hover:not(:disabled){background:rgba(0,0,0,.07);color:#111}
